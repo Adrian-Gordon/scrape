@@ -1,0 +1,26 @@
+html
+	head
+		title="Daily Report"
+		link(rel="stylesheet" type="text/css" href="/styles/dailyreport.css")
+		script(src="/jquery-2.1.4.min.js")
+		script(src="/dailyreport.js")
+	body
+		-for(race in results){
+		-var raceCard=results[race]
+		-var runners=raceCard.runners;
+			div(class='card')
+				div(class='' +raceCard.status)
+					|!{"Card: "}
+					a(href='http://www.racingpost.com/horses2/cards/card.sd?race_id=' + race)
+						|!{'&nbsp;' + race}
+					|!{'&nbsp;' + raceCard.status}
+					div(class='seerace')
+						a(href='/deletecard?raceid=' + race)
+							|delete
+					div(id='card' + race) 
+						script.
+							$(document).ready(function(){
+							 !{"getCardReport('" + race + "')"}
+							});
+		
+		-}

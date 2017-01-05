@@ -1,0 +1,122 @@
+2015-01-19T19:25:34.638Z - [32minfo[39m: [reframed] scrape.js:203 
+ (Class 7) 
+ (0-50, 4yo+) 
+ 1m Standard 
+[null,{"type":"class","value":7},null,{"type":"conditions","upper":50,"lower":0,"ageconditions":{"lower":4}},null,{"type":"distance","miles":1},null,{"type":"going","going":"Standard"}]
+
+2015-01-19T19:25:34.671Z - [32minfo[39m: [reframed] scrape.js:203 
+ (Class 2) 
+ (3yo) 
+ 6f Standard 
+[null,{"type":"class","value":2},null,{"type":"conditions","ageconditions":{"lower":3,"upper":3}},null,{"type":"distance","furlongs":6},null,{"type":"going","going":"Standard"}]
+
+2015-01-19T19:25:34.704Z - [32minfo[39m: [reframed] scrape.js:203 
+ (Class 5) 
+ (0-75, 4yo+) 
+ 1m Standard 
+[null,{"type":"class","value":5},null,{"type":"conditions","upper":75,"lower":0,"ageconditions":{"lower":4}},null,{"type":"distance","miles":1},null,{"type":"going","going":"Standard"}]
+
+2015-01-19T19:25:34.714Z - [32minfo[39m: [reframed] scrape.js:203 
+ (Class 5) 
+ (0-75, 4yo+) 
+ 7f Standard 
+[null,{"type":"class","value":5},null,{"type":"conditions","upper":75,"lower":0,"ageconditions":{"lower":4}},null,{"type":"distance","furlongs":7},null,{"type":"going","going":"Standard"}]
+
+2015-01-19T19:25:34.727Z - [32minfo[39m: [reframed] scrape.js:203 
+ (Class 6) 
+ (0-55, 4yo+) 
+ 1m4f Standard 
+[null,{"type":"class","value":6},null,{"type":"conditions","upper":55,"lower":0,"ageconditions":{"lower":4}},null,{"type":"distance","miles":1,"furlongs":4},null,{"type":"going","going":"Standard"}]
+
+2015-01-19T19:25:34.762Z - [32minfo[39m: [reframed] scrape.js:203 
+ (Class 6) 
+ (0-55, 4yo+) 
+ 7f Standard 
+[null,{"type":"class","value":6},null,{"type":"conditions","upper":55,"lower":0,"ageconditions":{"lower":4}},null,{"type":"distance","furlongs":7},null,{"type":"going","going":"Standard"}]
+
+2015-01-19T19:25:34.789Z - [32minfo[39m: [reframed] scrape.js:203 
+ (Class 6) 
+ (4yo+) (1m7f169y)
+ 
+ 2m Standard 
+[null,{"type":"class","value":6},null,{"type":"conditions","ageconditions":{"lower":4}},null,{"type":"distancep","miles":1,"furlongs":7,"yards":169},null,{"type":"distance","miles":2},null,{"type":"going","going":"Standard"}]
+
+2015-01-19T19:25:34.873Z - [32minfo[39m: [reframed] scrape.js:203 
+ (Class 5) 
+ (3yo+) (1m1y)
+ 
+ 1m Standard 
+[null,{"type":"class","value":5},null,{"type":"conditions","ageconditions":{"lower":3}},null,{"type":"distancep","miles":1,"yards":1},null,{"type":"distance","miles":1},null,{"type":"going","going":"Standard"}]
+
+2015-01-19T19:25:35.018Z - [32minfo[39m: [reframed] scrape.js:203 
+ (Class 6) 
+ (3yo) (7f1y)
+ 
+ 7f Standard 
+[null,{"type":"class","value":6},null,{"type":"conditions","ageconditions":{"lower":3,"upper":3}},null,{"type":"distancep","furlongs":7,"yards":1},null,{"type":"distance","furlongs":7},null,{"type":"going","going":"Standard"}]
+
+2015-01-19T19:25:35.026Z - [32minfo[39m: [reframed] scrape.js:203 
+ (Class 5) 
+ (3yo) (7f1y)
+ 
+ 7f Standard 
+[null,{"type":"class","value":5},null,{"type":"conditions","ageconditions":{"lower":3,"upper":3}},null,{"type":"distancep","furlongs":7,"yards":1},null,{"type":"distance","furlongs":7},null,{"type":"going","going":"Standard"}]
+
+2015-01-19T19:25:35.032Z - [32minfo[39m: [reframed] scrape.js:203 
+ (Class 5) 
+ (0-75, 3yo) 
+ 1m2f Standard 
+[null,{"type":"class","value":5},null,{"type":"conditions","upper":75,"lower":0,"ageconditions":{"lower":3,"upper":3}},null,{"type":"distance","miles":1,"furlongs":2},null,{"type":"going","going":"Standard"}]
+
+2015-01-19T19:25:35.048Z - [32minfo[39m: [reframed] scrape.js:203 
+ (Class 5) 
+ (0-75, 4yo+) (5f6y)
+ 
+ 5f Standard 
+[null,{"type":"class","value":5},null,{"type":"conditions","upper":75,"lower":0,"ageconditions":{"lower":4}},null,{"type":"distancep","furlongs":5,"yards":6},null,{"type":"distance","furlongs":5},null,{"type":"going","going":"Standard"}]
+
+2015-01-19T19:25:35.116Z - [32minfo[39m: [reframed] scrape.js:203 
+ (Class 4) 
+ (5yo+) 
+ 2m3f Heavy 10 hdles 
+[null,{"type":"class","value":4},null,{"type":"conditions","ageconditions":{"lower":5}},null,{"type":"distance","miles":2,"furlongs":3},null,{"type":"going","going":"Heavy"}]
+
+2015-01-19T19:25:35.123Z - [32minfo[39m: [reframed] scrape.js:203 
+ (Class 4) 
+ (4yo) (2m110y)
+ 
+ 2m½f Heavy 8 hdles 
+[null,{"type":"class","value":4},null,{"type":"conditions","ageconditions":{"lower":4,"upper":4}},null,{"type":"distancep","miles":2,"yards":110},null,{"type":"distance","miles":2,"furlongs":"½"},null,{"type":"going","going":"Heavy"}]
+
+2015-01-19T19:25:35.135Z - [32minfo[39m: [reframed] scrape.js:203 
+ (Class 3) 
+ (5yo+) 
+ 2m1f Soft 13 fences 
+[null,{"type":"class","value":3},null,{"type":"conditions","ageconditions":{"lower":5}},null,{"type":"distance","miles":2,"furlongs":1},null,{"type":"going","going":"Soft"}]
+
+2015-01-19T19:25:35.182Z - [32minfo[39m: [reframed] scrape.js:203 
+ (Class 4) 
+ (4yo+) 
+ 2m5f Heavy 10 hdles 
+[null,{"type":"class","value":4},null,{"type":"conditions","ageconditions":{"lower":4}},null,{"type":"distance","miles":2,"furlongs":5},null,{"type":"going","going":"Heavy"}]
+
+2015-01-19T19:25:35.188Z - [32minfo[39m: [reframed] scrape.js:203 
+ (Class 3) 
+ (0-130, 5yo+) 
+ 3m Soft 18 fences 
+[null,{"type":"class","value":3},null,{"type":"conditions","upper":130,"lower":0,"ageconditions":{"lower":5}},null,{"type":"distance","miles":3},null,{"type":"going","going":"Soft"}]
+
+2015-01-19T19:25:35.195Z - [32minfo[39m: [reframed] scrape.js:203 
+ (Class 6) 
+ (0-65, 4yo+) (6f1y)
+ 
+ 6f Standard 
+[null,{"type":"class","value":6},null,{"type":"conditions","upper":65,"lower":0,"ageconditions":{"lower":4}},null,{"type":"distancep","furlongs":6,"yards":1},null,{"type":"distance","furlongs":6},null,{"type":"going","going":"Standard"}]
+
+2015-01-19T19:25:35.275Z - [32minfo[39m: [reframed] scrape.js:203 
+ (Class 5) 
+ (4-6yo) (2m110y)
+ 
+ 2m½f Heavy 
+[null,{"type":"class","value":5},null,{"type":"conditions","ageconditions":{"upper":6,"lower":4}},null,{"type":"distancep","miles":2,"yards":110},null,{"type":"distance","miles":2,"furlongs":"½"},null,{"type":"going","going":"Heavy"}]
+

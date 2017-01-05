@@ -1,0 +1,60 @@
+<html>
+<head>
+	<script src="/jquery-2.1.4.min.js"></script>
+	<script src="/jquery-dateFormat.min.js"></script>
+	<script src="https://code.highcharts.com/highcharts.js"></script>
+	
+	<link rel="stylesheet" type="text/css" href="/styles/betchartstyles.css"></link>
+</head>
+<body>
+	<div class='graphcontainer'>
+		<div id='graph1'>
+			<div id="graphcontainer1" style="height: 400px"></div>
+		</div>
+		<div id='graphtext1'>
+			<p><label for='nbets1'>Bets:</label><span id='nbets1'></span><label for='nwins1'>Wins:</label><span id='nwins1'></span><label for='winpc1'>Win%:</label><span id='winpc1'></span><label for='roi1'>ROI:</label><span id='roi1'></span>
+			
+			</p>
+			<p><label for='exp1'>My Expected(%):</label><span id='exp1'></span><label for='oexp1'>Expected(%):</label><span id='oexp1'></span></p>
+			<p><label for='archie1'>Archie:</label><span id='archie1'></span><label for='sharpe1'>Sharpe Ratio:</label><span id='sharpe1'></span></p>
+			<div class='betsdiv' id='betsdiv1'>
+				<ul id='bets1'></ul>
+			</div>
+		</div>
+	</div>
+	<div id='controls1' class='controls'>
+		<label for='sortselect1'>Sort by:</label>
+		<select id='sortselect1'>
+			<option>date</option>
+			<option>probability</option>
+			<option>price</option>
+			<option>expected return</option>
+		</select>
+		<label for='codeselect1'>Code:</label>
+		<select id='codeselect1'>
+			<option selected>All</option>
+			<option>Flat</option>
+			<option>Jumps</option>
+		</select>
+		<label for='f-expected-gt-1'>return gt:</label>
+		<input type='text' id='f-expected-gt-1' size='10' />
+		<label for='f-expected-lt-1'>return lt:</label>
+		<input type='text' id='f-expected-lt-1' size='10' />
+		<label for='f-prob-gt-1'>prob gt:</label>
+		<input type='text' id='f-prob-gt-1' size='10' />
+		<label for='f-prob-lt-1'>prob lt:</label>
+		<input type='text' id='f-prob-lt-1' size='10' />
+		<label for='f-price-gt-1'>price gt:</label>
+		<input type='text' id='f-price-gt-1' size='10' />
+		<label for='f-price-lt-1'>price lt:</label>
+		<input type='text' id='f-price-lt-1' size='10' />
+		<button id="redraw1">Redraw</button>
+	</div>
+
+
+	
+	
+
+	<script src="/betchartscriptsBW.js"></script>
+</body>
+</html>

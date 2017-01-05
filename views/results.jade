@@ -1,0 +1,89 @@
+html
+	head
+		title="Results"
+		
+	body
+		- each meeting in results
+			div(class='meeting')
+				span
+					h2
+						|!{meeting.date + ' ' +meeting.meeting}
+			- //console.log('Meeting: ' + meeting.meeting)
+			- each race in meeting.races
+				div(class='race')
+					a(href='' + race.url) !{race.raceid}
+					span
+						|!{" " + race.racedata.raceType}
+					span
+						|!{" " +race.racedata.surface}
+					span
+						|!{" " + race.racedata.time + " " + race.racedata.conditionsText}
+					-//console.log("id:" + race.raceid + " " + race.racedata.conditionsText)
+					span
+						|!{"going: " + race.racedata.going}
+					span
+						|!{" lps: " + race.racedata.lps}
+					div(class='time')
+						-if((race.racedata.racetime != null)&&(typeof race.racedata.racetime.minutes=='undefined')&&(typeof race.racedata.racetime.seconds=='undefined')&&(typeof race.racedata.racetime.milliseconds=='undefined')&&(race.racedata.racetime.indexOf('parse error')!=-1)){
+							|Time:  !{race.racedata.racetime}
+						-}
+						-else{
+							|Time: !{race.racedata.racetime.minutes}m !{race.racedata.racetime.seconds}.!{race.racedata.racetime.milliseconds}s !{race.racedata.racetime.timeinseconds}
+						-}
+					div(class='conditions')
+					-if((race.racedata.conditions != null)&&(race.racedata.conditions.indexOf('parse error')!=-1)){
+							li !{race.racedata.conditions}
+					-}
+					-else{
+					-for(var i=0;i< race.racedata.conditions.length;i++){
+						-var condition=race.racedata.conditions[i];
+						- //console.log("condition: " + JSON.stringify(condition));
+						- if(condition != null){
+						-if(condition.conditiontype=='distancep'){
+								-var distancepS='';
+								-if(typeof condition.miles !=='undefined' ){
+									-distancepS+=condition.miles + 'm ';
+								-}
+								-if(typeof condition.furlongs !=='undefined' ){
+									-distancepS+=condition.furlongs + 'f ';
+								-}
+								-if(typeof condition.yards !=='undefined' ){
+									-distancepS+=condition.yards + 'y ';
+								-}
+							li !{distancepS} !{"(" + race.racedata.distanceinyards + "y)(" + race.racedata.distanceinmetres + "m)"}
+						-}
+						-else if(condition.conditiontype=='distance'){
+								-var distancepS='';
+								-if(typeof condition.miles !=='undefined' ){
+									-distancepS+=condition.miles + 'm ';
+								-}
+								-if(typeof condition.furlongs !=='undefined' ){
+									-distancepS+=condition.furlongs + 'f ';
+								-}
+							li !{distancepS}  
+						-}
+						-else if(condition.conditiontype=='class'){
+							li !{'class: ' +condition.value}
+						-}
+						-else if(condition.conditiontype=='going'){
+							li !{'going: ' +condition.going}
+						-}
+						-else if(condition.indexOf && (condition.indexOf('parse error')!=-1)){
+							li !{condition}
+						-}
+						-else{
+							li !{JSON.stringify(condition)}
+						-}
+						-}
+						-}
+
+					div(class='horses')
+						h3 Horses
+						span
+							|!{JSON.stringify(race.racedata.horses)}
+
+						-}
+
+							
+						
+

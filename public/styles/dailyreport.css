@@ -1,0 +1,44 @@
+.CARD-MISSING{
+	color:red
+}
+
+.RACE-MISSING{
+	color:red
+}
+
+.PERFORMANCE-MISSING{
+	color:red
+}
+
+
+.HORSE-MISSING{
+	color:red
+}
+
+.HORSE-MISSING img{
+	display:none;
+}
+
+.card{
+	padding-top:20px;
+}
+
+.runner{
+	margin-left:20px;
+	clear:both;
+}
+
+.race{
+	margin-left:20px;
+	clear:both;
+}
+
+.seerace{
+	margin-left:20px;
+	clear:both;
+}
+
+.loadgif{
+	height:20px;
+	width:20px;
+}

@@ -1,0 +1,189 @@
+<html>
+<head>
+	<script src="/jquery-2.1.4.min.js"></script>
+	<script src="/jquery-dateFormat.min.js"></script>
+	<script src="https://code.highcharts.com/highcharts.js"></script>
+	
+	<link rel="stylesheet" type="text/css" href="/styles/betchartstyles.css"></link>
+</head>
+<body>
+	<div class='graphcontainer'>
+		<div id='graph1'>
+			<div id="graphcontainer1" style="height: 400px"></div>
+		</div>
+		<div id='graphtext1'>
+			<p><label for='nbets1'>Bets:</label><span id='nbets1'></span><label for='nwins1'>Wins:</label><span id='nwins1'></span><label for='winpc1'>Win%:</label><span id='winpc1'></span><label for='roi1'>ROI:</label><span id='roi1'></span>
+			
+			</p>
+			<p><label for='exp1'>My Expected(%):</label><span id='exp1'></span><label for='oexp1'>Expected(%):</label><span id='oexp1'></span></p>
+			<p><label for='archie1'>Archie:</label><span id='archie1'></span><label for='sharpe1'>Sharpe Ratio:</label><span id='sharpe1'></span></p>
+			<div class='betsdiv' id='betsdiv1'>
+				<ul id='bets1'></ul>
+			</div>
+		</div>
+	</div>
+	<div id='controls1' class='controls'>
+		<label for='sortselect1'>Sort by:</label>
+		<select id='sortselect1'>
+			<option>date</option>
+			<option>probability</option>
+			<option>price</option>
+			<option>expected return</option>
+		</select>
+		<label for='codeselect1'>Code:</label>
+		<select id='codeselect1'>
+			<option selected>All</option>
+			<option>Flat</option>
+			<option>Jumps</option>
+		</select>
+		<label for='f-expected-gt-1'>return gt:</label>
+		<input type='text' id='f-expected-gt-1' size='10' />
+		<label for='f-expected-lt-1'>return lt:</label>
+		<input type='text' id='f-expected-lt-1' size='10' />
+		<label for='f-prob-gt-1'>prob gt:</label>
+		<input type='text' id='f-prob-gt-1' size='10' />
+		<label for='f-prob-lt-1'>prob lt:</label>
+		<input type='text' id='f-prob-lt-1' size='10' />
+		<label for='f-price-gt-1'>price gt:</label>
+		<input type='text' id='f-price-gt-1' size='10' />
+		<label for='f-price-lt-1'>price lt:</label>
+		<input type='text' id='f-price-lt-1' size='10' />
+		<button id="redraw1">Redraw</button>
+	</div>
+
+
+	<div class='graphcontainer'>
+		<div id='graph2'>
+			<div id="graphcontainer2" style="height: 400px"></div>
+		</div>
+		<div id='graphtext2'>
+			<p><label for='nbets2'>Bets:</label><span id='nbets2'></span><label for='nwins2'>Wins:</label><span id='nwins2'></span><label for='winpc2'>Win%:</label><span id='winpc2'></span><label for='roi2'>ROI:</label><span id='roi2'></span>
+				</p>
+			<p><label for='exp2'>My Expected(%):</label><span id='exp2'></span><label for='oexp2'>Expected(%):</label><span id='oexp2'></span></p>
+			<p><label for='archie2'>Archie:</label><span id='archie2'></span><label for='sharpe2'>Sharpe Ratio:</label><span id='sharpe2'></span></p>
+			<div class='betsdiv' id='betsdiv2'>
+				<ul id='bets2'></ul>
+			</div>
+		</div>
+	</div>
+	<div id='controls2' class='controls'>
+		<label for='sortselect2'>Sort by:</label>
+		<select id='sortselect2'>
+			<option>date</option>
+			<option>probability</option>
+			<option>price</option>
+			<option>expected return</option>
+		</select>
+		<label for='codeselect2'>Code:</label>
+		<select id='codeselect2'>
+			<option selected>All</option>
+			<option>Flat</option>
+			<option>Jumps</option>
+		</select>
+		<label for='f-expected-gt-2'>return gt:</label>
+		<input type='text' id='f-expected-gt-2' size='10' />
+		<label for='f-expected-lt-2'>return lt:</label>
+		<input type='text' id='f-expected-lt-2' size='10' />
+		<label for='f-prob-gt-2'>prob gt:</label>
+		<input type='text' id='f-prob-gt-2' size='10' />
+		<label for='f-prob-lt-2'>prob lt:</label>
+		<input type='text' id='f-prob-lt-2' size='10' />
+		<label for='f-price-gt-2'>price gt:</label>
+		<input type='text' id='f-price-gt-2' size='10' />
+		<label for='f-price-lt-2'>price lt:</label>
+		<input type='text' id='f-price-lt-2' size='10' />
+		<button id="redraw2">Redraw</button>
+	</div>
+
+
+
+	<div class='graphcontainer'>
+		<div id='graph3'>
+			<div id="graphcontainer3" style="height: 400px"></div>
+		</div>
+		<div id='graphtext3'>
+			<p><label for='nbets3'>Bets:</label><span id='nbets3'></span><label for='nwins3'>Wins:</label><span id='nwins3'></span><label for='winpc3'>Win%:</label><span id='winpc3'></span><label for='roi3'>ROI:</label><span id='roi3'></span>
+				</p>
+			<p><label for='exp3'>My Expected(%):</label><span id='exp3'></span><label for='oexp3'>Expected(%):</label><span id='oexp3'></span></p>
+			<p><label for='archie3'>Archie:</label><span id='archie3'></span><label for='sharpe3'>Sharpe Ratio:</label><span id='sharpe3'></span></p>
+			<div class='betsdiv' id='betsdiv3'>
+				<ul id='bets3'></ul>
+			</div>
+		</div>
+	</div>
+	<div id='controls3' class='controls'>
+		<label for='sortselect3'>Sort by:</label>
+		<select id='sortselect3'>
+			<option>date</option>
+			<option>probability</option>
+			<option>price</option>
+			<option>expected return</option>
+		</select>
+		<label for='codeselect3'>Code:</label>
+		<select id='codeselect3'>
+			<option selected>All</option>
+			<option>Flat</option>
+			<option>Jumps</option>
+		</select>
+		<label for='f-expected-gt-3'>return gt:</label>
+		<input type='text' id='f-expected-gt-3' size='10' />
+		<label for='f-expected-lt-3'>return lt:</label>
+		<input type='text' id='f-expected-lt-3' size='10' />
+		<label for='f-prob-gt-3'>prob gt:</label>
+		<input type='text' id='f-prob-gt-3' size='10' />
+		<label for='f-prob-lt-3'>prob lt:</label>
+		<input type='text' id='f-prob-lt-3' size='10' />
+		<label for='f-price-gt-3'>price gt:</label>
+		<input type='text' id='f-price-gt-3' size='10' />
+		<label for='f-price-lt-3'>price lt:</label>
+		<input type='text' id='f-price-lt-3' size='10' />
+		<button id="redraw3">Redraw</button>
+	</div>
+
+	<div class='graphcontainer'>
+		<div id='graph4'>
+			<div id="graphcontainer4" style="height: 400px"></div>
+		</div>
+		<div id='graphtext4'>
+			<p><label for='nbets4'>Bets:</label><span id='nbets4'></span><label for='nwins4'>Wins:</label><span id='nwins4'></span><label for='winpc4'>Win%:</label><span id='winpc4'></span><label for='roi4'>ROI:</label><span id='roi4'></span>
+			</p>
+			<p><label for='exp4'>My Expected(%):</label><span id='exp4'></span><label for='oexp4'>Expected(%):</label><span id='oexp4'></span></p>
+			<p><label for='archie4'>Archie:</label><span id='archie4'></span><label for='sharpe4'>Sharpe Ratio:</label><span id='sharpe4'></span></p>
+			<div class='betsdiv' id='betsdiv4'>
+				<ul id='bets4'></ul>
+			</div>
+		</div>
+	</div>
+	<div id='controls4' class='controls'>
+		<label for='sortselect4'>Sort by:</label>
+		<select id='sortselect4'>
+			<option>date</option>
+			<option>probability</option>
+			<option>price</option>
+			<option>expected return</option>
+		</select>
+		<label for='codeselect4'>Code:</label>
+		<select id='codeselect4'>
+			<option selected>All</option>
+			<option>Flat</option>
+			<option>Jumps</option>
+		</select>
+		<label for='f-expected-gt-4'>return gt:</label>
+		<input type='text' id='f-expected-gt-4' size='10' />
+		<label for='f-expected-lt-4'>return lt:</label>
+		<input type='text' id='f-expected-lt-4' size='10' />
+		<label for='f-prob-gt-4'>prob gt:</label>
+		<input type='text' id='f-prob-gt-4' size='10' />
+		<label for='f-prob-lt-4'>prob lt:</label>
+		<input type='text' id='f-prob-lt-4' size='10' />
+		<label for='f-price-gt-4'>price gt:</label>
+		<input type='text' id='f-price-gt-4' size='10' />
+		<label for='f-price-lt-4'>price lt:</label>
+		<input type='text' id='f-price-lt-4' size='10' />
+		<button id="redraw4">Redraw</button>
+	</div>
+	
+
+	<script src="/betchartscripts.js"></script>
+</body>
+</html>
