@@ -1481,7 +1481,7 @@ function resultsBatch(req,res){
     for(var i=0;i<bets.length;i++){
       var bet=bets[i];
       var marketid=bet.marketid;
-      sendString+="sudo node " + nconf.get("scrapedir") + "bfmonitor --marketid=" + marketid + "\n";
+      sendString+="sudo node " + nconf.get("scrapedir") + "bfmonitor --conf " + nconf.get('datadir')+ "betconfig.json --marketid=" + marketid + "\n";
 
 
     }
