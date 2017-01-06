@@ -355,7 +355,7 @@ function predict(cdObject){
           //break;
           //go get the Gaussian sigma
           var cmd="java -cp " + nconf.get('classpath') + " GaussianFit2 \"{'observations':" + JSON.stringify(horse.distPredictions) + "}\"";
-          //logger.info("cmd: " + cmd);
+         // logger.info("cmd: " + cmd);
 
           var gaussianParams=execSync(cmd);
          // logger.info('gaussian: ' + gaussian);
@@ -545,10 +545,10 @@ function getCluster(horseid,horse,refs,distance2,going2,date2,weight2,racetype){
   var distPerfs=horse.perfs;
 
   var count=distPerfs.length;
-
+  //logger.info("bestMatches: " + JSON.stringify(bestMatches));
   for(var i=0;i<10;i++){
     //logger.info(bestMatches[i].matches + " " + bestMatches[i].cumulativeerror + " " + bestMatches[i].avgerror);
-    if(bestMatches.length > 0)
+    if((bestMatches.length > 0)&&(bestMatches[i]))
       distPerfs=distPerfs.concat(transformForPrediction(bestMatches[i].performances,distance2,going2,date2,weight2,racetype));
     if(distPerfs.length > nconf.get("nperfsforgaussian"))
       break;
