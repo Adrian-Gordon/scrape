@@ -548,7 +548,8 @@ function getCluster(horseid,horse,refs,distance2,going2,date2,weight2,racetype){
 
   for(var i=0;i<10;i++){
     //logger.info(bestMatches[i].matches + " " + bestMatches[i].cumulativeerror + " " + bestMatches[i].avgerror);
-    distPerfs=distPerfs.concat(transformForPrediction(bestMatches[i].performances,distance2,going2,date2,weight2,racetype));
+    if(bestMatches.length > 0)
+      distPerfs=distPerfs.concat(transformForPrediction(bestMatches[i].performances,distance2,going2,date2,weight2,racetype));
     if(distPerfs.length > nconf.get("nperfsforgaussian"))
       break;
     
