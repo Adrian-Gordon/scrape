@@ -12,6 +12,11 @@ if(path=nconf.get('conf')){
  
 }
 
+//var cursor = db.getCollection('races').find({racetype:'FLAT',iscomplete:{$exists:false}},{_id:1}).sort({date:-1}).limit(100);
+//while(cursor.hasNext()) {
+//    print("\"" + cursor.next()._id + "\",");
+//}
+
 nconf.defaults(
 {
   
@@ -30,7 +35,7 @@ nconf.defaults(
      },
      "host":"localhost",
      "port":"3000",
-     "raceids":["538009"]
+     "raceids":[]
       });
 
 
@@ -40,7 +45,7 @@ var databaseUrl=nconf.get("databaseurl");
 var db = require("mongojs").connect(databaseUrl, collections);
 
 
-var raceids=nconf.get("raceids");
+var raceid=nconf.get("raceid");
 
 
 
@@ -114,13 +119,10 @@ var request = require('request');
 var srequest=require('sync-request');
 
 
-for(var i=0;i<raceids.length;i++){
- //for(var i=0;i<1;i++){
 
-    var raceid=raceids[i];
-    processRaceData(raceid);
+processRaceData(''+raceid);
 
-}
+
 
 var count=0;
 
@@ -133,7 +135,7 @@ function processRaceData(raceid){
       	logger.info(JSON.stringify(race));
       	if((typeof race.iscomplete != 'undefined') && (race.iscomplete==true)){
       		logger.info("Race: " + raceid + " is Complete");
-
+           process.exit();
       	}
       	else{
 
@@ -141,7 +143,7 @@ function processRaceData(raceid){
       		db.races.update({"_id": raceid},{$set:{iscomplete:true}});
 
 	      	var horseids=race.runners;
-
+          var count=horseids.length;
 	      	for(var i=0;i<horseids.length;i++){
 	      		var runnerid=horseids[i];
 	      		//logger.info("raceid: " + raceid + " runnerid: " + runnerid);
@@ -149,18 +151,37 @@ function processRaceData(raceid){
 	      		//logger.info("url: " + horseUrl);
 	      		var fn = function(hid){
 					request({url:horseUrl},function(error,response,body){
-						var horseraces=JSON.parse(body);
-						//logger.info(hid + " races: " + JSON.stringify(horseraces));
+            count--;
 
-						for(var j=0;j<horseraces.length;j++){
-							var hraceid=horseraces[j];
-							var tocheck={
-								runnerid:hid,
-								raceid:hraceid
-							}
-							logger.info("insert in perfstocheck: " + JSON.stringify(tocheck));
-							 db.perfstocheck.insert(tocheck);
-						}
+            try{
+  						var horseraces=JSON.parse(body);
+  						//logger.info(hid + " races: " + JSON.stringify(horseraces));
+
+  						for(var j=0;j<horseraces.length;j++){
+  							var hraceid=horseraces[j];
+  							var tocheck={
+  								runnerid:hid,
+  								raceid:hraceid
+  							}
+  							//logger.info("insert in perfstocheck: " + JSON.stringify(tocheck));
+  							 db.perfstocheck.insert(tocheck);
+              }
+  					}catch(err){
+                logger.error("parse error: " + err.message + " when parsing " + body + " for horse " + hid);
+                process.exit();
+              }
+
+              if(count==0){
+                //mark the race as complete
+                db.races.update({"_id": raceid},{$set:{iscomplete:true}},function(){
+                  //wait 2 seconds in the hope that all db manipulations will have completed
+                  setTimeout(function(){
+                   process.exit();
+                  },2000);
+                });
+               
+              }
+            
 
 					});
 				}(runnerid);
