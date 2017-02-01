@@ -6,7 +6,6 @@
 //nconf is used globally
 nconf=require('nconf');
 
-var execSync=require('child_process').execSync
 
 //favour environment variables and command line arguments
 nconf.env().argv();
@@ -367,13 +366,7 @@ function predict(cdObject){
     predictNode=new gpnode.parseNode(nconf.get('jumpsrule'));
   }
 
-  //get reference horses
-
-  var referenceHorses=[];
-
-
-    
-
+ 
         for(horseid in cdObject.horses){
           //logger.info("predict for horse: " + horseid);
           var horse=cdObject.horses[horseid];
@@ -381,8 +374,7 @@ function predict(cdObject){
           horse.predicted=[];
           horse.cumulativePredictions=0;
           //logger.info(JSON.stringify(horse));
-          var distPredictions=new Array();//getCluster(horseid,horse,referenceHorses,cdObject.distance2,cdObject.going2,cdObject.date2,horse.targetweight,racetype);
-
+          var distPredictions=new Array();
 
            //Now generate predictions for each performance;
           //var predictNode=new gpnode.parseNode(nconf.get('rule'));
@@ -666,228 +658,4 @@ function doMonteCarlo(horses){
 }
 
 
-//Returns a set of performances gathered from a 'cluster' of similar horses, to be used in generating
-//a normal distribution of horse performances
-//distance2, going2,date2 and weight2 are the target conditions for the race (and weight for the given horse)
-function getCluster(horseid,horse,refs,distance2,going2,date2,weight2,racetype){
-  //logger.info("get cluster in " + horseid)
-  //logger.info("HORSE: " + JSON.stringify(horse));
-  //clear the refs data
-
-  for(var i=0;i<refs.length;i++){
-    refs[i].matches=0;
-    refs[i].cumulativeerror=0;
-  }
-
-  //iterate over the horse's performances
-  for(var i=0;i<horse.perfs.length;i++){
-  //for(var i=0;i<1;i++){
-    var perf = horse.perfs[i];
-    //iterate over all reference performances
-    for(var j=0;j<refs.length;j++){
-    //for(var j=0;j<1;j++){
-      var refHorse=refs[j];
-        if(refHorse._id != horse.id){
-          for(raceid in refHorse.performances){
-            var refPerf=refHorse.performances[raceid];
-            var matches=matchPerfs(perf,refPerf);
-            if(matches.matches){
-              refs[j].matches=refs[j].matches+1;
-              refs[j].cumulativeerror=refs[j].cumulativeerror+matches.error;
-              refs[j].avgerror=refs[j].cumulativeerror/refs[j].matches;
-            }
-            //break;
-
-          }
-        }
-    }
-
-  }
-  //sort by number of matches
-  refs.sort(function(a,b){
-    if(a.matches >b.matches)return(-1);
-    if(a.matches <b.matches)return(1);
-    return(0);
-
-  });
-
- /* refs.sort(function(a,b){
-    var aAvg=a.cumulativeerror/a.matches;
-    var bAvg=b.cumulativeerror/b.matches;
-    if(aAvg>bAvg)return(1);
-    if(aAvg <bAvg)return(-1);
-    return(0);
-  })*/
-
-  var bestMatches=[];
-
- // logger.info('Best match: ' + JSON.stringify(refs[0]));
-  for(var i=0;i<10;i++){
-    //logger.info(refs[i].matches + " " + refs[i].cumulativeerror + " " +  refs[i].avgerror);
-   // refs[i].avgerror=refs[i].cumulativeerror/refs[i].matches;
-    bestMatches.push(refs[i]);
-  }
-
-  bestMatches.sort(function(a,b){
-    if(a.avgerror < b.avgerror) return(-1);
-    if(a.avgerror > b.avgerror) return(1);
-    return(0);
-  });
-
-  var distPerfs=horse.perfs;
-
-  var count=distPerfs.length;
-  //logger.info("bestMatches: " + JSON.stringify(bestMatches));
-  for(var i=0;i<10;i++){
-    //logger.info(bestMatches[i].matches + " " + bestMatches[i].cumulativeerror + " " + bestMatches[i].avgerror);
-    if((bestMatches.length > 0)&&(bestMatches[i]))
-      distPerfs=distPerfs.concat(transformForPrediction(bestMatches[i].performances,distance2,going2,date2,weight2,racetype));
-    if(distPerfs.length > nconf.get("nperfsforgaussian"))
-      break;
-    
-  }
-
-  
-
-  //logger.info("distPerfs: " + JSON.stringify(distPerfs));
- // logger.info("length: " + distPerfs.length);
-
-  horse.distPerfs=distPerfs;
-  distPredictions=[];
-
-  //Now generate predictions for each performance;
-  //var predictNode=new gpnode.parseNode(nconf.get('rule'));
-  var predictNode;
-  if(racetype=='FLAT'){
-    predictNode=new gpnode.parseNode(nconf.get('flatrule'));
-  }
-  else if(racetype=='CHASE'){
-    predictNode=new gpnode.parseNode(nconf.get('jumpsrule'));
-  }
-  else if(racetype=='HURDLE'){
-    predictNode=new gpnode.parseNode(nconf.get('jumpsrule'));
-  }
-  
-  for(var i=0;i<horse.distPerfs.length;i++){
-        var perf=horse.distPerfs[i];
-       // logger.info(JSON.stringify(perf));
-
-        var val=predictNode.eval(perf);
-        var s1=perf.speed1;
-        var predicted= s1 + ((s1*val)/100000);
-        //logger.info('predicted: ' +predicted);
-        distPredictions.push(predicted);
-       
-
-  }
-
-  //logger.info(horse.id + " name: " + horse.name + " p: " + horse.meanPredicted + " ndperfs: " + horse.distPerfs.length);
-  //logger.info(JSON.stringify(distPredictions));
-  //logger.info("get cluster returns " + horseid);
-  return(distPredictions);
-  
-
-
-}
-
-function matchPerfs(perf,refperf){
-  
-  var returnObj={
-    matches:false,
-    error:0
-  }
-  // logger.info("match perf: " + JSON.stringify(perf) + " to " + JSON.stringify(refperf));
-
-  var refGoing=nconf.get('goingmappings')[refperf.going];
-  var distDiff = Math.abs(refperf.distance - perf.distance1);
-  var weightDiff=Math.abs(refperf.weight - perf.weight1);
- // logger.info("weightDiff: " + weightDiff + " distDiff: " + distDiff + " refGoing: " + refGoing + " going: " + perf.going1);
-
-if(refGoing==perf.going1 && (distDiff <= nconf.get('distancepm'))&&(weightDiff <= nconf.get('weightpm'))){
-//if(refGoing==perf.going1 && (distDiff <= nconf.get('distancepm'))){
-    returnObj.matches=true;
-    returnObj.error=Math.abs(perf.speed1-refperf.speed);
-   // logger.info("matches perf: " + JSON.stringify(perf) + " to " + JSON.stringify(refperf));
-
-    //logger.info('returns: ' + JSON.stringify(returnObj));
-  }
-
-
-
-  return(returnObj);
-
-
-
-}
-
-//returns an array of performances to be used in a prediction
-//each will be transformed into the form: 
-
-function transformForPrediction(perfs,distance2,going2,date2,weight2,racetype){
-  var arrayToReturn=[]
-  for(raceid in perfs){
-        var perf=perfs[raceid];
-       // logger.info("   perf: " + JSON.stringify(perf));
-        if(perf.date < date2 && perf.speed < 30.0 && !isNaN(parseInt(perf.position))){
-
-          if(racetype=='FLAT'){
-            if(perf.racetype=='FLAT'){
-               var moment1=moment(perf.date);
-                var moment2=moment(date2);
-                var diffDays = moment2.diff(moment1, 'days');
-                var perfObject={
-                  //horseid:horse._id,
-                 // name:cr.name,
-                 // raceid:raceid,
-                  speed1:perf.speed,
-                  datediff:diffDays,
-                  going1:nconf.get('goingmappings')[perf.going],
-                  going2:nconf.get('goingmappings')[going2],
-                  goingdiff:nconf.get('goingmappings')[going2]-nconf.get('goingmappings')[perf.going],
-                  distance1:perf.distance,
-                  distance2:distance2,
-                  distancediff:distance2-perf.distance,
-                  weight1:perf.weight,
-                  weight2:weight2,
-                  weightdiff:weight2-perf.weight,
-
-                }
-                arrayToReturn.push(perfObject);
-
-            }
-          }
-          else if(racetype=='HURDLE' || racetype=='CHASE'){
-            if(perf.racetype=='HURDLE' || perf.racetype=='CHASE'){
-              var moment1=moment(perf.date);
-                var moment2=moment(date2);
-                var diffDays = moment2.diff(moment1, 'days');
-                var perfObject={
-                  //horseid:horse._id,
-                 // name:cr.name,
-                 // raceid:raceid,
-                  speed1:perf.speed,
-                  datediff:diffDays,
-                  going1:nconf.get('goingmappings')[perf.going],
-                  going2:nconf.get('goingmappings')[going2],
-                  goingdiff:nconf.get('goingmappings')[going2]-nconf.get('goingmappings')[perf.going],
-                  distance1:perf.distance,
-                  distance2:distance2,
-                  distancediff:distance2-perf.distance,
-                  weight1:perf.weight,
-                  weight2:weight2,
-                  weightdiff:weight2-perf.weight,
-
-                }
-                arrayToReturn.push(perfObject);
-            }
-          }
-         
-          //logger.info("   perfObject: " + JSON.stringify(perfObject));
-        }
-        //break;
-  }
-  return(arrayToReturn);
-
-
-}
 
