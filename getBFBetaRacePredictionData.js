@@ -1,5 +1,8 @@
-/*This app gets assembles the data for a racecard in a form suitable for prediction - card data and past performance data*/
- gaussian=require('gaussian');
+/*This app  assembles the data for a race in a form suitable for prediction - race data and past performance data*/
+/*gets data from the races collection, using BF Past data for the Bets*/
+/*Uses a Beta distribution to estimate probabilities*/
+
+
 //nconf is used globally
 nconf=require('nconf');
 
@@ -45,15 +48,22 @@ nconf.defaults(
       "nperfsforgaussian":100,
       "classpath":"/Users/adriangordon/Development/Gaussian/:/Users/adriangordon/Development/Gaussian/flanagan.jar:/Users/adriangordon/Development/Gaussian/json-20160212.jar",
       "montecarlotrials":100000,
-      "gpnodepath":"../../Node/node.js"
+      "gpnodepath":"../../Node/node.js",
+      "alpha":4,
+      "beta":2
 });
 
 
 
-var collections=["races","horses","cards","tomonitor"];
+var collections=["races","horses","cards","tomonitor","spbets"];
 var databaseUrl=nconf.get("databaseurl");
 var db = require("mongojs").connect(databaseUrl, collections);
 var gpnode=require(nconf.get("gpnodepath"));
+
+var databaseUrl2=nconf.get("databaseurl2");
+var collections2=["bfraces"];
+var db2= require("mongojs").connect(databaseUrl2, collections2);
+
 
 
 
@@ -129,44 +139,95 @@ var request = require('request');
 var srequest=require('sync-request');
 
 //logger.info("raceid: " + nconf.get("raceid").toString() + (typeof nconf.get("raceid")));
-getCardPredictionData(nconf.get("raceid").toString(),predict);
+getRacePredictionData(nconf.get("raceid").toString(),predict);
 
 
-function getCardPredictionData(raceid,callback){
-  var cardPredictObject={
+function getRacePredictionData(theraceid,callback){
+  var racePredictObject={
 
     horses:{
 
     }
   }
 
-  db.cards.findOne({rpraceid:raceid},function(err,card){
+  db.races.findOne({_id:theraceid},function(err,race){
     if(err){
       logger.error(JSON.stringify(err));
     }
     else{
+      //build the off date time
+      logger.info(JSON.stringify(race));
+      var offdate=new Date(race.date);
+      logger.info("offdate: " + offdate);
+      var offYear=offdate.getFullYear();
+      var offMonth=offdate.getMonth()+1;
+      if(offMonth < 10){
+        offMonth='0' + offMonth;
+      }
+      var offDay=offdate.getDate();
+      if(offDay < 10){
+        offDay='0' + offDay;
+      }
+
+      logger.info(offYear +" " + offMonth + " " + offDay);
+
+      var timeS=race.offtime;
+      var index=timeS.indexOf(':');
+
+      var hrs=parseInt(timeS.substring(index-2,index));
+      var mins=parseInt(timeS.substring(index+1,index + 3));
+
+      logger.info(hrs + " " + mins);
+
+      var offDateTimeS=offYear + "-" + offMonth + "-" + offDay;
+      var hrsS;
+      var minsS;
+         
+
+      if(hrs < 12){
+        hrsS="" + (hrs + 12);
+      }
+      else{
+        hrsS="" + hrs;
+      }
+
+      if(mins< 10){
+        minsS="0" + mins;
+      }
+      else{
+        minsS="" + mins;
+      }
+
+      offDateTimeS+="T" + hrsS + ":" + minsS + ":00"
+
+      logger.info(offDateTimeS);
+
       //logger.info("Card: " + JSON.stringify(card));
-      cardPredictObject.raceid=raceid;
-      cardPredictObject.offtime=card.offdatetime;
-      cardPredictObject.course=card.meeting;
-      cardPredictObject.surface=card.surface;
-      cardPredictObject.racetype=card.racetype;
+      racePredictObject.raceid=theraceid;
+      racePredictObject.offtime=new Date(offDateTimeS);
+      racePredictObject.course=race.meeting;
+      racePredictObject.surface=race.surface;
+      racePredictObject.racetype=race.racetype;
 
-      var going2=card.going;
-      var distance2=card.distance;
-      var raceDate=card.date;
+      logger.info(JSON.stringify(racePredictObject));
 
-      cardPredictObject.going2=going2;
-      cardPredictObject.distance2=distance2;
-      cardPredictObject.date2=raceDate;
+      var going2=race.going;
+      var distance2=race.distance;
+      var raceDate=race.date;
+
+      racePredictObject.going2=going2;
+      racePredictObject.distance2=distance2;
+      racePredictObject.date2=raceDate;
       var count=0;
-      for(runnerid in card.runners){
-        var cardRunner=card.runners[runnerid];
-
+     // for(runnerid in race.runners){
+     //   var raceRunner=race.runners[runnerid];
+     for(var i=0;i<race.runners.length;i++){
+        var runnerid=race.runners[i];
         count++;
-        var runnerObj={id:runnerid,perfs:[],targetweight:cardRunner.weight};
+        //var runnerObj={id:runnerid,perfs:[],targetweight:raceRunner.weight};
         //logger.info(runnerid);
-        var f=function(ro,rid,cr){
+        var runnerObj={id:runnerid,perfs:[]};
+        var f=function(ro,rid){
           //logger.info("cr: " + JSON.stringify(cr));
             db.horses.findOne({_id:runnerid},function(err,horse){
               if(err){
@@ -179,16 +240,35 @@ function getCardPredictionData(raceid,callback){
 
                 if(horse !== null){
                     var perfs=horse.performances;
+
+                    //get target weight in this race
+
+                    var thisPerf=perfs[theraceid];
+                    if(typeof thisPerf=='undefined'){
+                      logger.error("horse: " + runnerid + " no performance for: " + theraceid);
+                    }
+                  
+                      ro.targetWeight=thisPerf.weight;
+                      if(thisPerf.position==1){
+                        ro.status="WINNER";
+                      }
+                      else{
+                        ro.status="LOSER";
+                      }
+                      ro.sprice=thisPerf.price;
+                      ro.bestLayWinPrice=1.0/(thisPerf.price.fractionbottom/(thisPerf.price.fractionbottom + thisPerf.price.fractiontop));
+                      ro.bestBackWinPrice=ro.bestLayWinPrice;
+
                     for(raceid in perfs){
                       var perf=perfs[raceid];
                       //logger.info(cr.name + "   perf: " + JSON.stringify(perf));
 
-                      var cardRaceType=1;
-                      if(card.racetype=='HURDLE'){
-                        cardRaceType=1
+                      var raceRaceType=1;
+                      if(race.racetype=='HURDLE'){
+                        raceRaceType=1
                       }
-                      else if(card.racetype=='CHASE'){
-                         cardRaceType=2
+                      else if(race.racetype=='CHASE'){
+                         raceRaceType=2
                       }
 
                       var perfRaceType=1;
@@ -199,13 +279,13 @@ function getCardPredictionData(raceid,callback){
                          perfRaceType=2
                       }
 
-                      var cardCode="FLAT";
-                      if(card.racetype=='CHASE'){
+                      var raceCode="FLAT";
+                      if(race.racetype=='CHASE'){
 
-                        cardCode="JUMPS";
+                        raceCode="JUMPS";
                       }
-                      else if(card.racetype=="HURDLE"){
-                        cardCode="JUMPS";
+                      else if(race.racetype=="HURDLE"){
+                        raceCode="JUMPS";
                       }
 
                       var perfCode="FLAT";
@@ -220,41 +300,40 @@ function getCardPredictionData(raceid,callback){
                        //   goingsArray.push(perf1.going);
                       //  }
 
-                      if(perfCode==cardCode && perf.date < raceDate && perf.speed < 30.0 && !isNaN(parseInt(perf.position))){
+                      if(perfCode==raceCode && perf.date < raceDate && perf.speed < 30.0 && !isNaN(parseInt(perf.position))){
                         var moment1=moment(perf.date);
-                        var moment2=moment(card.date);
+                        var moment2=moment(race.date);
                         var diffDays = moment2.diff(moment1, 'days');
                         var perfObject={
                           horseid:horse._id,
-                          name:cr.name,
                           raceid:raceid,
                           speed1:perf.speed,
                           datediff:diffDays,
                           going1:nconf.get('goingmappings')[perf.going],
-                          going2:nconf.get('goingmappings')[card.going],
-                          goingdiff:nconf.get('goingmappings')[card.going]-nconf.get('goingmappings')[perf.going],
+                          going2:nconf.get('goingmappings')[race.going],
+                          goingdiff:nconf.get('goingmappings')[race.going]-nconf.get('goingmappings')[perf.going],
                           distance1:perf.distance,
-                          distance2:card.distance,
-                          distancediff:card.distance-perf.distance,
+                          distance2:race.distance,
+                          distancediff:race.distance-perf.distance,
                           weight1:perf.weight,
-                          weight2:cr.weight,
-                          weightdiff:cr.weight-perf.weight,
+                          weight2:ro.targetWeight,
+                          weightdiff:ro.targetWeight-perf.weight,
                           type1:perfRaceType,
-                          type2:cardRaceType,
-                          typediff:cardRaceType-perfRaceType,
+                          type2:raceRaceType,
+                          typediff:raceRaceType-perfRaceType,
                           racetype:perf.racetype,
                           surface:perf.surface
 
                         }
                         ro.perfs.push(perfObject);
-                        ro.name=cr.name;
-                        logger.info("   perfObject: " + JSON.stringify(perfObject));
+                        //ro.name=cr.name;
+                       // logger.info("   perfObject: " + JSON.stringify(perfObject));
                       }
                       //break;
                     }
-                    cardPredictObject.horses[rid]=ro;
+                    racePredictObject.horses[rid]=ro;
                     //logger.info("COUNT: " + count);
-                    if(count==0)callback(cardPredictObject);
+                    if(count==0)callback(racePredictObject);
 
 
               }
@@ -265,7 +344,7 @@ function getCardPredictionData(raceid,callback){
             }
 
             });
-          }(runnerObj,runnerid,cardRunner);
+          } (runnerObj,runnerid);
 
       }
     }
@@ -292,19 +371,8 @@ function predict(cdObject){
 
   var referenceHorses=[];
 
-  db.horses.find({reference:true},function(err,referenceHorses){
-     /* for(horse in horses){
-        var count=Object.keys(horses[horse].performances).length;
-       // logger.info("COUNT: " + count);
-        if(count > nconf.get('referencecount')){
-         // logger.info("ref horse: " + JSON.stringify(horses[horse]))
-          referenceHorses.push(horses[horse]);
-        }
 
-      }*/
-     // logger.info("nrefhorses: " + referenceHorses.length);
-
-
+    
 
         for(horseid in cdObject.horses){
           //logger.info("predict for horse: " + horseid);
@@ -312,91 +380,116 @@ function predict(cdObject){
           //logger.info(JSON.stringify(horse));
           horse.predicted=[];
           horse.cumulativePredictions=0;
-          var nperfs=0;
+          //logger.info(JSON.stringify(horse));
+          var distPredictions=new Array();//getCluster(horseid,horse,referenceHorses,cdObject.distance2,cdObject.going2,cdObject.date2,horse.targetweight,racetype);
+
+
+           //Now generate predictions for each performance;
+          //var predictNode=new gpnode.parseNode(nconf.get('rule'));
+          var predictNode;
+          if(racetype=='FLAT'){
+            predictNode=new gpnode.parseNode(nconf.get('flatrule'));
+          }
+          else if(racetype=='CHASE'){
+            predictNode=new gpnode.parseNode(nconf.get('jumpsrule'));
+          }
+          else if(racetype=='HURDLE'){
+            predictNode=new gpnode.parseNode(nconf.get('jumpsrule'));
+          }
+          
           for(var i=0;i<horse.perfs.length;i++){
-            var perf=horse.perfs[i];
-            //logger.info(JSON.stringify(perf));
-            //logger.info("racetype: " + racetype)
-            //only use performances for this code
-            if(racetype=='FLAT'){
-              if(perf.racetype=='FLAT'){
+                var perf=horse.perfs[i];
+               // logger.info(JSON.stringify(perf));
+
                 var val=predictNode.eval(perf);
                 var s1=perf.speed1;
                 var predicted= s1 + ((s1*val)/100000);
                 //logger.info('predicted: ' +predicted);
-                horse.predicted.push(predicted);
-                nperfs++;
-                horse.cumulativePredictions+=predicted;
-              }
-
-            }
-            else if(racetype=='HURDLE' || racetype=='CHASE'){
-              if(perf.racetype=='HURDLE' || perf.racetype=='CHASE'){
-                var val=predictNode.eval(perf);
-                var s1=perf.speed1;
-                var predicted= s1 + ((s1*val)/100000);
-                //logger.info('predicted: ' +predicted);
-                horse.predicted.push(predicted);
-                 nperfs++;
-                horse.cumulativePredictions+=predicted;
-              }
-            }
-
-            
+                distPredictions.push(predicted);
+               
 
           }
-          if(nperfs < 1){    //omit races containing horses with no qualifying performances
-            logger.info("horse: " + horseid + " has fewer than 4 qualifying performances (" + nperfs + ")");
-            process.exit();
-          }
-          horse.meanPredicted=horse.cumulativePredictions/nperfs;
+
+          horse.distPredictions=distPredictions;
           //logger.info(JSON.stringify(horse));
-          horse.distPredictions=getCluster(horseid,horse,referenceHorses,cdObject.distance2,cdObject.going2,cdObject.date2,horse.targetweight,racetype);
-          //break;
-          //go get the Gaussian sigma
-          var cmd="java -cp " + nconf.get('classpath') + " GaussianFit2 \"{'observations':" + JSON.stringify(horse.distPredictions) + "}\"";
-          logger.info("cmd: " + cmd);
-          /*
-          var gaussianParams=execSync(cmd);
-         // logger.info('gaussian: ' + gaussian);
-         //logger.info('GPs: ' + gaussianParams);
 
-         if(gaussianParams.indexOf("Maximum iteration number reached")!==-1){
-
-            logger.error("Non Gausian Data, raceid: " + nconf.get("raceid") + " horseid: " + horseid);
-            logger.error("cmd: " + cmd);
-            process.exit();
-         }
-          var gaussianObj=JSON.parse( gaussianParams);
-          horse.gaussianSigma=gaussianObj.sigma;
-          //logger.info(JSON.stringify(horse));
-          logger.info(horse.id + " " + horse.name + " " + horse.meanPredicted + " " + horse.gaussianSigma);
-
-          horse.gaussianDistribution=gaussian(horse.meanPredicted,horse.gaussianSigma * horse.gaussianSigma);
-          horse.trialsResults={
-            first:0,
-            second:0,
-            third:0,
-            fourth:0,
-            winProbablity:0.0,
-            placeProbability:0.0
-          }*/
 
         }
         //logger.info(JSON.stringify(cdObject));
-        //doMonteCarlo(cdObject.horses);
-        outputToMonitorObject(cdObject);
-    })
+        buildBetaDistributionParameters(cdObject.horses);
+        doMonteCarlo(cdObject.horses);
+        //outputToSPbetObject(cdObject);
+        gatherHorseNames(cdObject);
+    
+}
+
+//get the horse names, in order to pull in the BF past data
+function gatherHorseNames(cdObject){
+    var horsenameLookup={};
+    var count=Object.keys(cdObject.horses).length;//length
+   for(horseid in cdObject.horses){
+      var url="http://" + nconf.get("host")+ ":" + nconf.get("port") + "/gethorsename?horseid=" + horseid;
+      logger.info(url);
+      request(url, function(err,resp,body){
+        //logger.info(body);
+        var horsedetails=JSON.parse(resp.body);
+        var horseName=horsedetails.name;
+        horsenameLookup[horsedetails.id]=horseName.replace(/'/g,'');
+        count--;
+        //logger.info("count: " + count);
+        if(count==0){
+          //we've finished
+          logger.info(JSON.stringify(horsenameLookup));
+          gatherBFPrices(horsenameLookup,cdObject);
+        }
+      })
+
+   }
+
+}
+
+function gatherBFPrices(horsenameLookup,cdObject){
+  var rpraceid=cdObject.raceid;
+  //find the race in the BF past data;
+  db2.bfraces.findOne({rpraceid:rpraceid,winners:1},function(err,bfrace){
+    if(bfrace){
+
+      var bfhorses={};
+      for(horsename in bfrace.runners){
+        var horseNameS=horsename.replace(/´/g,'').toUpperCase();
+        bfhorses[horseNameS]=getLatestOdds(bfrace.runners[horsename].odds);
+
+
+      }
+      logger.info(JSON.stringify(bfhorses));
+      outputToSPbetObject(horsenameLookup,bfhorses,cdObject);
+    }
+      
+  });
+
+}
+
+function getLatestOdds(oddsArray){
+  oddsArray.sort(function(a, b) {
+    return a.latest>b.latest ? -1 : a.latest<b.latest ? 1 : 0;
+  });
+
+  //logger.info("sorted array:");
+  //logger.info(JSON.stringify(oddsArray));
+  //process.exit();
+  return(oddsArray[0].odds);
+
 }
 
 
-function outputToMonitorObject(cdObject){
+function outputToSPbetObject(horsenameLookup,bfodds,cdObject){
   var obj={
-    raceid:cdObject.raceid,
+    rpraceid:cdObject.raceid,
     course:cdObject.course,
     offtime:cdObject.offtime,
     surface:cdObject.surface,
     racetype:cdObject.racetype,
+    marketType:"WIN",
     horses:{
 
     }
@@ -406,21 +499,120 @@ function outputToMonitorObject(cdObject){
   for(horseid in cdObject.horses){
       //logger.info("predict for horse: " + horseid);
       var horse=cdObject.horses[horseid];
+    //  logger.info("horse: " + JSON.stringify(horse));
       var horseObj={
+        name:horsenameLookup[horseid],
         mean:horse.meanPredicted,
         sigma:horse.gaussianSigma,
-        rphorseid:horseid
+        rphorseid:horseid,
+        status:horse.status,
+        bestLayWinPrice:bfodds[horsenameLookup[horseid]],
+        bestBackWinPrice:bfodds[horsenameLookup[horseid]],
+        sprice:horse.sprice,
+        trialsResults:horse.trialsResults,
+        winProbability:horse.trialsResults.winProbability,
+        winLayReturn:((1-horse.trialsResults.winProbability)/(1-(1/horse.bestLayWinPrice))) -1,
+        winBackReturn:(horse.trialsResults.winProbability/(1/horse.bestBackWinPrice)-1)
       }
-      obj.horses[horse.name]=horseObj;
+      obj.horses[horseid]=horseObj;
 
   }
   logger.info(JSON.stringify(obj));
-  db.tomonitor.insert(obj);
+  db.spbets.insert(obj);
   process.exit();
 
 }
 
+
+//calculate the min and max values to be used by the beta distribution for each horse
+function buildBetaDistributionParameters(horses){
+  var jStat = require('jStat').jStat;
+  var predictedMode=jStat.beta.mode(4,2);
+  var nhorses=Object.keys(horses).length;
+  for(horseid in horses){
+        var horse=horses[horseid];
+        var observations=horse.distPredictions;
+
+        var min=0;
+        var max=0;
+        var nbins=20;
+        var bins;
+        var modeIndex;
+
+        do{
+          //console.log("nbins: " + nbins);
+           bins=new Array(nbins);
+
+          for(var i=0;i<nbins;i++){
+            bins[i]=0;
+          }
+
+          for(var i=0;i<observations.length;i++){
+            var obs=observations[i];
+            if(i==0){
+              min=obs;
+              max=obs;
+            }
+            if(obs < min){
+              min=obs;
+            }
+            if(obs > max)max=obs;
+
+
+          }
+
+          var binWidth=(max-min)/nbins;
+
+          for(var i=0;i<observations.length;i++){
+            var obs=observations[i];
+            var binno=Math.floor((observations[i]-min)/binWidth);
+            if(binno ==nbins){
+              binno=nbins-1;
+            }
+            bins[binno]=bins[binno]+1;
+            //console.log(obs + " " + binno);
+            
+          }
+
+          //find the mode
+
+          var maxCount=0;
+           modeIndex=0;
+          for(var i=0;i<nbins;i++){
+            var count=bins[i];
+            if(count> maxCount){
+              maxCount=count;
+              modeIndex=i;
+            }
+            
+          }
+          //console.log("mode count: " + bins[modeIndex]);
+          nbins--;
+        }while((bins[modeIndex]< 6)&&(nbins > 0)); //we must have a mode
+
+
+        //console.log("MODE INDEX: " + modeIndex);
+
+        //console.log("minO: " + min + " maxO: " + max + " predictedMode: " + predictedMode);
+        var modeValue=min + modeIndex * binWidth;
+        var calculatedMinValue=max-((max-modeValue)/((1-predictedMode)/predictedMode));
+        //console.log("modeIndex: " + modeIndex + " modeValue: " + modeValue + "calculatedMinValue: " + calculatedMinValue);
+
+        horse.betaMaxValue=max;
+        horse.betaMinValue=calculatedMinValue;
+
+        logger.info("max: " + max + " min: " +calculatedMinValue + "observations: " + JSON.stringify(observations) );
+
+
+
+    }
+
+}
+
+
+/*do a montecarlo simulation of the race , using a beta distribution*/
 function doMonteCarlo(horses){
+  /*
   var nhorses=Object.keys(horses).length;
   for(var trial=0;trial<nconf.get('montecarlotrials');trial++){
       var samples=[];
@@ -467,9 +659,9 @@ function doMonteCarlo(horses){
   //calculate probabilities
    for(horseid in horses){
         var horse=horses[horseid];
-        horse.trialsResults.winProbablity= horse.trialsResults.first /nconf.get('montecarlotrials');
-        logger.info(horse.name + " " + horse.trialsResults.winProbablity);
-    }
+        horse.trialsResults.winProbability= horse.trialsResults.first /nconf.get('montecarlotrials');
+        logger.info(horse.name + " " + horse.trialsResults.winProbability);
+    }*/
 
 }
 

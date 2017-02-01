@@ -95,7 +95,7 @@ function traceCaller(n) {
 //end logging config
 
 
-var collections=["races","horses","cards","tomonitor","bets","testbets"];
+var collections=["races","horses","cards","tomonitor","bets","testbets","spbets"];
 var databaseUrl=nconf.get("databaseurl");
 var mongojs=require("mongojs");
 var db = require("mongojs").connect(databaseUrl, collections);
@@ -711,7 +711,7 @@ app.get('/resultsbatch',resultsBatch);
 
 
 function betsReport(req,res){
-
+  var collectionS=req.query.collection;
   var marketType=req.query.market;//WIN or PLACE
   var betType=req.query.bettype;//BACK or LAY
   var code=req.query.code; //FLAT or JUMPS, or undefined
@@ -729,7 +729,11 @@ function betsReport(req,res){
   var layProportion=0.05; //default 5%  of bank per lay bet
   var backProportion=0.02;//default 2% of bank per back bet
   //build sort object
-
+  var collection=db.bets; //default collection to run the query against
+  if(typeof collectionS != 'undefined'){
+    if(collectionS == 'bets')collection=db.bets;
+    if(collectionS=='spbets')collection=db.spbets;
+  }
   
   if(typeof proportionS != 'undefined'){
     if(betType=="LAY"){
@@ -752,7 +756,8 @@ function betsReport(req,res){
   }
   //{ $or: [ { <expression1> }, { <expression2> }, ... , { <expressionN> } ] }
   logger.info("QueryObject: " + JSON.stringify(queryObject));
-  db.bets.find(queryObject).sort({offtime:1},function(err,bets){
+  
+  collection.find(queryObject).sort({offtime:1},function(err,bets){
   //db.testbets.find(queryObject,function(err,bets){
     if(err){
       logger.error(err);
@@ -2668,11 +2673,21 @@ function getHorseRaces(req,res){
 
 function getHorseName(req,res){
   var horseid=req.query.horseid;
-  var url="http://www.racingpost.com/horses/horse_home.sd?horse_id=" + horseid;
+  db.horses.findOne({_id:horseid},function(err,horse){
+    if((horse != null) && (typeof horse.name != 'undefined')){
+      res.json({id:horseid,name:horse.name});
+    }
+    else{
+      var url="http://www.racingpost.com/horses/horse_home.sd?horse_id=" + horseid;
 
-  var resp=srequest("GET",url);
-  var nameData=parseHorseName(resp.getBody());
-  res.json({id:horseid,name:nameData});
+      var resp=srequest("GET",url);
+      var nameData=parseHorseName(resp.getBody());
+      db.horses.update({_id:horseid},{$set:{name: nameData}});
+      res.json({id:horseid,name:nameData});
+    }
+  });
+
+  
 }
 
 function getCardData(req,res){
