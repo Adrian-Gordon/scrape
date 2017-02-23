@@ -38,7 +38,7 @@ nconf.defaults(
 var moment=require('moment');
 
 var collections=["bfraces"];
-var databaseUrl=nconf.get("databaseurl");
+var databaseUrl=nconf.get("databaseurl2");
 var db = require("mongojs").connect(databaseUrl, collections);
 
 
@@ -106,7 +106,7 @@ var parse = require('csv-parse/lib/sync');
 var transform = require('stream-transform');
 
 var output = [];
-
+var lineCount=0;
 
 var input = fs.createReadStream(fileuri);
 
@@ -119,6 +119,7 @@ lr.on('error', function (err) {
 });
 
 lr.on('line', function (line) {
+  lineCount++;
   // pause emitting of lines...
   lr.pause();
   var records=parse(line,{delimiter:',',columns:["SPORTS_ID","EVENT_ID","SETTLED_DATE","COUNTRY","FULL_DESCRIPTION","COURSE","SCHEDULED_OFF","EVENT","ACTUAL_OFF","SELECTION_ID","SELECTION","ODDS","NUMBER_BETS","VOLUME_MATCHED","LATEST_TAKEN","FIRST_TAKEN","WIN_FLAG","IN_PLAY"]});
@@ -139,7 +140,7 @@ lr.on('line', function (line) {
           lr.resume();
         }
         else{
-  
+                //logger.info(line);
         
                  var newRace={
                   _id:parseInt(record.EVENT_ID),
@@ -161,15 +162,16 @@ lr.on('line', function (line) {
                 }
                 //logger.info("Go find " + newRace._id);
                 db.bfraces.findOne({_id:newRace._id}, function(err,race){
-                 // logger.info("Race: " + JSON.stringify(race));
+                  //logger.info("Race: " + JSON.stringify(race));
                   if(race==null){ 
-                    //logger.info('insert race: ' + JSON.stringify(newRace));
+                    logger.info('line: ' + lineCount + ' insert race: ' + newRace._id);
                     newRace.runners={};
                     newRace.runners[newHorse.name]=newHorse;
                     if(newHorse.win==1){
                       newRace.winners=1;
                     }
                     db.bfraces.insert(newRace,function(err){
+                      //logger.info("new race inserted");
                       lr.resume();
                     });
                   }
@@ -181,6 +183,8 @@ lr.on('line', function (line) {
                     
 
                     if(typeof runners[newHorse.name] == 'undefined'){ //first time we've seen this horse
+                      //
+                    logger.info('line: ' + lineCount + "add horse");
                       runners[newHorse.name]=newHorse;
                       if(newHorse.win==1){
                         //logger.info("newhorse wins: " + JSON.stringify(newHorse));
@@ -189,9 +193,11 @@ lr.on('line', function (line) {
                       }
                     }
                     else{
+                      logger.info('line: ' + lineCount + "add odds");
                       runners[newHorse.name].odds.push({odds:parseFloat(record.ODDS),numberTaken:parseInt(record.NUMBER_BETS), volume:parseFloat(record.VOLUME_MATCHED),latest:new Date(moment.utc(record.LATEST_TAKEN,"DD-MM-YYYY HH:mm:ss").toISOString()),first:new Date(moment.utc(record.FIRST_TAKEN,"DD-MM-YYYY HH:mm:ss").toISOString())});
                     }
                      db.bfraces.update({_id:race._id},{$set:{runners:runners,winners:winners}},function(err){
+                      //logger.info("race updated");
                       lr.resume();
                      });
                     

@@ -1,10 +1,11 @@
 /*This app  assembles the data for a race in a form suitable for prediction - race data and past performance data*/
-/*gets data from the races collection, using SP for the Bets*/
- gaussian=require('gaussian');
+/*gets data from the races collection, using BF Past data for the Bets*/
+/*Uses a Beta distribution to estimate probabilities*/
+
+
 //nconf is used globally
 nconf=require('nconf');
 
-var execSync=require('child_process').execSync
 
 //favour environment variables and command line arguments
 nconf.env().argv();
@@ -46,12 +47,14 @@ nconf.defaults(
       "nperfsforgaussian":100,
       "classpath":"/Users/adriangordon/Development/Gaussian/:/Users/adriangordon/Development/Gaussian/flanagan.jar:/Users/adriangordon/Development/Gaussian/json-20160212.jar",
       "montecarlotrials":100000,
-      "gpnodepath":"../../Node/node.js"
+      "gpnodepath":"../../Node/node.js",
+      "alpha":4,
+      "beta":2
 });
 
 
 
-var collections=["races","spbets"];
+var collections=["races","horses","cards","tomonitor","spbets"];
 var databaseUrl=nconf.get("databaseurl");
 var db = require("mongojs").connect(databaseUrl, collections);
 var gpnode=require(nconf.get("gpnodepath"));
@@ -134,57 +137,164 @@ var port=nconf.get("port");
 var request = require('request');
 var srequest=require('sync-request');
 
+//logger.info("raceid: " + nconf.get("raceid").toString() + (typeof nconf.get("raceid")));
+generateBetaSampleData(nconf.get("horseid").toString(),predict);
 
-var betCursor=db2.bfraces.find({rpraceid:{$exists:true},winners:1});//Winners only, for now
 
-var betsCount=0;
-var betsOutCount=0;
+function generateBetaSampleData(thehorseid,callback){
+  var horsePredictObject={
 
- var maxOdds =20000;//req.query.maxodds;
-  var maxProbability=0.3;//req.query.maxprob;
-  var minLayReturn=0.0;
-  var maxLayReturn=1.0;
-  var returnArray=[];
-  var marketType="WIN";//WIN or PLACE
-  var code="FLAT"; //FLAT or JUMPS, or undefined
-  var betType="LAY";
+    performances:[],
+    predictions:[]
+  }
 
-doProcessOneBet();
+  db.horses.findOne({_id:thehorseid},function(err,horse){
+    if(err){
+      logger.error(JSON.stringify(err));
+    }
+    else{
+      var performances=horse.performances;
+      var latest=null;
+      var latestid=null;
 
-function doProcessOneBet(){
-   betCursor.next(function(err, bet) {
-     if(bet){
-      var rpraceid=bet.rpraceid;
-      //logger.info("rpraceid: " + rpraceid);
-      db.races.findOne({_id:rpraceid},function(err,race){
-        //logger.info("race: " + JSON.stringify(race));
-        if(race && (race.racetype==nconf.get('racetype'))){
-            //logger.info("It's Flat: " + JSON.stringify(race));
-            //now see if there is a BFbet already
-            db.spbets.findOne({"rpraceid":rpraceid},function(err,spbet){
-                if(spbet){
-                    //logger.info("It's already there: " + JSON.stringify(spbet));
-                    doProcessOneBet();
-                }
-                else{
-                  console.log("node "+ nconf.get('scrapepath')+"getBFBetaRacePredictionData --conf=" + nconf.get('confdir') + "spbetconf.json --raceid=" + rpraceid);
-                  doProcessOneBet();
-                }
-            });
-             
+      for(raceid in performances){
+          var perf=performances[raceid];
+          if(latest==null){
+            latest=perf.date;
+            latestid=raceid;
+          }
+          else if(perf.date > latest){
+            latest=perf.date;
+            latestid=raceid;
+          }
+              
+      }
+
+      var target=performances[raceid];
+
+      for(raceid in performances){
+          var perf=performances[raceid];
+          var raceRaceType=1;
+          if(target.racetype=='HURDLE'){
+            raceRaceType=1
+          }
+          else if(target.racetype=='CHASE'){
+             raceRaceType=2
+          }
+
+          var perfRaceType=1;
+          if(perf.racetype=='HURDLE'){
+            perfRaceType=1
+          }
+          else if(perf.racetype=='CHASE'){
+             perfRaceType=2
+          }
+
+          var raceCode="FLAT";
+          if(target.racetype=='CHASE'){
+
+            raceCode="JUMPS";
+          }
+          else if(target.racetype=="HURDLE"){
+            raceCode="JUMPS";
+          }
+
+          var perfCode="FLAT";
+          if(perf.racetype=="CHASE"){
+            perfCode="JUMPS";
+          }
+          else if(perf.racetype=="HURDLE"){
+            perfCode="JUMPS";
+          }
+
+          //  if(goingsArray.indexOf(perf1.going)==-1){
+           //   goingsArray.push(perf1.going);
+          //  }
+
+          if(perfCode==raceCode && perf.date < target.date && perf.speed < 30.0 && !isNaN(parseInt(perf.position))){
+            var moment1=moment(perf.date);
+            var moment2=moment(target.date);
+            var diffDays = moment2.diff(moment1, 'days');
+            var perfObject={
+              horseid:horse._id,
+              raceid:raceid,
+              speed1:perf.speed,
+              datediff:diffDays,
+              going1:nconf.get('goingmappings')[perf.going],
+              going2:nconf.get('goingmappings')[target.going],
+              goingdiff:nconf.get('goingmappings')[target.going]-nconf.get('goingmappings')[perf.going],
+              distance1:perf.distance,
+              distance2:target.distance,
+              distancediff:target.distance-perf.distance,
+              weight1:perf.weight,
+              weight2:target.weight,
+              weightdiff:target.weight-perf.weight,
+              type1:perfRaceType,
+              type2:raceRaceType,
+              typediff:raceRaceType-perfRaceType,
+              racetype:perf.racetype,
+              surface:perf.surface
+
+            }
+            horsePredictObject.performances.push(perfObject);
+            //ro.name=cr.name;
+           // logger.info("   perfObject: " + JSON.stringify(perfObject));
+          }
+          //break;
         }
-        else{
-           doProcessOneBet();
-        }
-      })
+
+      }
+
+      //console.log(latestid + " " +JSON.stringify(latest));
+      //console.log(JSON.stringify(horsePredictObject.performances));
+
+      callback(horsePredictObject,target);
      
-     
-     }
-     else{
-      process.exit();
-     }
-   });
+
+    
+  });
+
 
 
 }
+
+function predict(horsePredictObject,target){
+    
+
+    //Now generate predictions for each performance;
+    //var predictNode=new gpnode.parseNode(nconf.get('rule'));
+    var predictNode;
+    if(target.racetype=='FLAT'){
+      predictNode=new gpnode.parseNode(nconf.get('flatrule'));
+    }
+    else if(rtarget.acetype=='CHASE'){
+      predictNode=new gpnode.parseNode(nconf.get('jumpsrule'));
+    }
+    else if(target.racetype=='HURDLE'){
+      predictNode=new gpnode.parseNode(nconf.get('jumpsrule'));
+    }
+    process.stdout.write('[');
+  for(var i=0;i<horsePredictObject.performances.length;i++){
+
+      var perf=horsePredictObject.performances[i];
+       // logger.info(JSON.stringify(perf));
+
+        var val=predictNode.eval(perf);
+        var s1=perf.speed1;
+        var predicted= s1 + ((s1*val)/100000);
+        //logger.info('predicted: ' +predicted);
+        //console.log('p:' + predicted);
+        horsePredictObject.predictions.push(predicted);
+        if(i==0)process.stdout.write(""+predicted );
+        else process.stdout.write(","+predicted); 
+               
+
+  }
+  process.stdout.write(']');
+  process.exit(1);
+
+
+}
+
+
 
