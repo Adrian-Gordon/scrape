@@ -343,6 +343,7 @@ var cardConditionsParserStr="start= (ws /expr)+\n"
 +"/ageORCondExpr\n"
 +"classExpr='(' 'CLASS' ws int:integer ')'   {return{conditiontype:'class', value:int}}\n"
 +"/'(' 'Grade' ws int:integer ')'   {return{conditiontype:'grade', value:int}}\n"
++"/'(' 'Class' ws int:integer ')'   {return{conditiontype:'class', value:int}}\n"
 +"ageORCondExpr='(' agecond:agecond ' ' ORCond:ORCond ')' {return[agecond,ORCond]}\n"
 +"condExpr='(' lower:integer '-' upper:integer ')'  {return{conditiontype:'conditions',upper:upper,lower:lower}}\n"
 +"/'(' lower:integer '-' upper:integer ',' ws age:agecond ')'  {return{conditiontype:'conditions',upper:upper,lower:lower,ageconditions:age}}\n"
@@ -683,6 +684,7 @@ app.get('/gethorseraces',getHorseRaces);
 app.get('/gethorsename',getHorseName);
 
 /*USAGE: /getcarddata?raceid=642388*/
+/*		/getcarddata?raceurl=/racecards/393/lingfield-aw/2017-02-24/668167*/
 app.get('/getcarddata',getCardData);
 
 /*USAGE: /deletecard?raceid=642388*/
@@ -2065,6 +2067,192 @@ var parseCardData=function(raceid,body){
 
 }
 
+var parseCardDataFromRaceUrl=function(raceurl,body){
+
+	var i=raceurl.lastIndexOf('/');
+
+	var raceid=raceurl.substring(i+1,raceurl.length);
+	var raceDateStr=raceurl.substring(i-10,i);
+	//console.log('raceDateStr ' + raceDateStr);
+	var yearS=raceDateStr.substring(0,4);
+	var monthS=raceDateStr.substring(5,7);
+	var dayS=raceDateStr.substring(8,11);
+
+	var object={
+		
+		status:"OK",
+		_id:raceid,
+		url:raceurl,
+		date:{year:yearS,month:monthS,day:dayS},
+		horses:{}
+	}
+	
+
+	$ = cheerio.load(body);
+
+	var offTime=$('.RC-courseHeader__time').text().replace(/(\r\n|\n|\r)/gm,"").trim();
+	var i=offTime.indexOf(':');
+	//logger.info("offTime: " + offTime + " i: " + i + " hrs: " + offTime.substring(0,i) + " mins: " + offTime.substring(i+1));
+	var otHrs=parseInt(offTime.substring(0,i));
+	var otMins=parseInt(offTime.substring(i+1));
+	//logger.info(offTime);
+	object.offtimeS=offTime;
+	object.offtime={
+		hours:otHrs,
+		minutes:otMins
+	}
+	
+
+	var fullPlaceText=$('.RC-courseHeader__name').text();
+	//console.log("fullPlaceText: " + fullPlaceText);
+
+	try{
+		object.meeting=fullPlaceText.replace(/(\r\n|\n|\r)/gm,"").trim().toUpperCase();
+	}catch(err){
+			object.status='ERROR';
+			object.meeting="parse error: " + err.message + " when parsing " + fullPlaceText + " in race " + raceurl;
+			logger.error("parse error: " + err.message + " when parsing " + fullPlaceText + " in race " + raceurl);
+
+	}
+	object.surface='TURF';
+	if((object.meeting.indexOf("(")!== -1)&&(object.meeting.indexOf(")")!== -1)){
+			if((object.meeting.indexOf("(AW)")!== -1)||(object.meeting.indexOf("(AW)")!== -1)){
+				object.surface="AW";
+			}
+
+		
+	}
+	//var dateText=$('.RC-courseHeader__date').text();
+	//console.log('dateText: ' + dateText);
+	var distanceRound=$('.RC-cardHeader__distance').text().trim();
+	logger.info("distanceRound: " + distanceRound);
+
+	try{
+		var distObj=cardDistParser.parse(distanceRound);
+		//console.log('distance Obj: ' + JSON.stringify(distObj));
+		object.distance=distObj;
+	}catch(err){
+		object.status='ERROR';
+		object.distance="parse error: " + err.message + " when parsing " + distanceRound + " in race " + raceurl;
+		logger.error("parse error: " + err.message + " when parsing " + distanceRound + " in race " + raceurl);
+
+	}
+
+	var conditionsText="";
+	var courseInformation=$('.RC-cardHeader__courseDetails span[data-test-selector]');
+	//console.log('courseInformation :' + courseInformation.html());
+	courseInformation.each(function(index){
+		console.log('text: '+ JSON.stringify($(this).get(0).attribs['data-test-selector']) + ' ' +$(this).text());
+		var selector=$(this).get(0).attribs['data-test-selector'];
+		if(selector=='RC-header__raceDistance'){
+			console.log('there is a full distance');
+			try{
+			var distObj=cardDistParser.parse($(this).text().trim().replace('(','').replace(')',''));
+			//console.log('distance Obj: ' + JSON.stringify(distObj));
+			object.distance=distObj;
+			}catch(err){
+				//object.status='ERROR';
+				//object.distance="parse error: " + err.message + " when parsing " + distanceRound + " in race " + raceurl;
+				logger.error("parse error: " + err.message + " when parsing " + $(this).text().trim() + " in race " + raceurl);
+
+			}
+
+		}
+		else if(selector == 'RC-header__raceInstanceTitle'){
+			object.raceType='FLAT';
+			if($(this).text().toUpperCase().indexOf(' HURDLE') !== -1){
+				object.raceType='HURDLE';
+			}
+			else if($(this).text().toUpperCase().indexOf(' CHASE') !== -1){
+				object.raceType='CHASE';
+			}
+			else if($(this).text().toUpperCase().indexOf(' NATIONAL HUNT FLAT') !== -1){
+				object.raceType='NHFLAT';
+			}
+			
+			 
+
+		}
+		else if(selector == 'RC-header__raceClass' || selector == 'RC-header__rpAges'){
+			 conditionsText+= $(this).text().trim();
+		}
+	});
+	console.log("conditionsText: " +conditionsText);
+	try{
+	 object.conditions=cardConditionsParser.parse(conditionsText);
+	}catch(err){
+			object.conditions="parse error: " + err.message + " when parsing " + conditionsText + " in race " + raceurl;
+			object.status='ERROR';
+			logger.error("parse error: " + err.message + " when parsing " + conditionsText + " in race " + raceurl);
+
+	}
+
+	var goingInformation=$('.RC-cardHeader div[data-test-selector]');
+	//console.log($(goingInformation).text());
+	goingInformation.each(function(index){
+		//console.log($this).text();
+		var selector=$(this).get(0).attribs['data-test-selector'];
+		if(selector=="RC-headerBox__going"){
+			console.log("selector: " + selector + "text: " +$(this).text());
+			var goingEl=$(this).find('.RC-headerBox__infoRow__content');
+			var goingText= $(goingEl).text();
+			try{
+				var goingObj=cardGoingParser.parse(goingText);
+				object.going=goingObj;
+
+			}catch(err){
+				object.status='ERROR';
+				object.going="parse error: " + err.message + " when parsing " + goingText + " in race " + raceurl;
+				logger.error("parse error: " + err.message + " when parsing " + goingText + " in race " + raceurl);
+			}
+		}
+	});
+
+	return(object);
+	
+/*
+
+	
+
+	$('#sc_horseCard tbody').each(function(){
+		if($(this).attr('id').match(/sc_/)){
+			//console.log('id: ' + $(this).attr('id'));
+			var anchors=$(this).find('a');
+			var index=0;
+			anchors.each(function(){
+				var href=$(this).attr('href');
+				if((href.indexOf('horse_id')!==-1)&&(href.indexOf('horse_home')!=-1)){
+					index++;
+					//console.log("href: " + href)
+					var i=href.indexOf('horse_id=');
+					var horseid=href.substring(i+9);
+					//console.log('horseid=' + horseid)
+					logger.info("NAME TEXT: " + $(this).text());
+					var weightS=$(this).parent().next().next().find('div').first().text()
+					logger.info("WEIGHT: " + weightS);
+					var weight=weightParser.parse(weightS);
+					logger.info("WEIGHT: " + weightS + " weight: " + weight);
+					object.horses[horseid]={
+						name:$(this).text(),
+						weight:weight
+					};
+
+
+					//var hd=srequest('GET',horseRacesUrl);
+					//logger.info("horseid: " + horseid + " dates: " +hd);
+				}
+			})
+		}
+	})
+
+	
+
+	return(object);
+*/
+
+}
+
+
 
 var parseResultPage = function(url,body,lps) {
 
@@ -2691,7 +2879,23 @@ function getHorseName(req,res){
 }
 
 function getCardData(req,res){
+
 	var raceid=req.query.raceid;
+	var raceurl=req.query.raceurl;
+	if(typeof raceid != 'undefined'){
+		getCardDataFromRaceid(req,res,raceid);
+	}
+	else if(typeof raceurl != 'undefined'){
+		getCardDataFromRaceUrl(req,res,raceurl);
+
+	}
+	else{
+		res.end();
+	}
+}
+
+function getCardDataFromRaceid(req,res,raceid){
+	//var raceid=req.query.raceid;
 	var url="http://www.racingpost.com/horses2/cards/card.sd?race_id=" + raceid;
 
 	var resp=srequest("GET",url);
@@ -2741,14 +2945,70 @@ function getCardData(req,res){
 }
 
 
-if(typeof nconf.get('date')!== 'undefined'){
+function getCardDataFromRaceUrl(req,res,raceurl){
+	//var raceid=req.query.raceid;
+	var url="https://beta.racingpost.com" + raceurl;
+	//console.log(url);
+
+	var resp=srequest("GET",url);
+	//console.log(resp.getBody().toString());
+
+	var cardData=parseCardDataFromRaceUrl(raceurl,resp.getBody().toString());
+
+	/*var cardData=parseCardData(raceid,resp.getBody());
+
+	//iterate over each horse, getting it's races
+	var index=0;
+	for(var horseid in cardData.horses){
+		index++
+		logger.info("Get races for " + horseid);
+		 horseRacesUrl="http://localhost:" + server.address().port + "/gethorseraces?horseid=" + horseid;
+					logger.info('horseRacesUrl: ' + horseRacesUrl);
+					var horseName=cardData.horses[horseid].name;
+					var horseWeight=cardData.horses[horseid].weight;
+					var r=function(hid,hn,hw){
+						request(horseRacesUrl,function(error,response,body){
+							index--;
+              try{
+    							logger.info('body: ' + body);
+    							//if index==0;
+    							cardData.horses[hid]={
+    								races:JSON.parse(body),
+    								status:"OK",
+    								name:hn,
+    								weight:hw
+    							}
+              }catch(exception){
+                //it didn't work
+                logger.error(JSON.stringify("Exception: " + exception + " in: " + horseRacesUrl + " body: " + body));
+              }
+							if(index==0){ //we've done all horses
+								res.json(cardData);
+
+							}
+						});
+					}(horseid,horseName,horseWeight)
+					
+	}
+
+	*/
+
+
+	
+	res.json(cardData);
+	//res.end();
+
+}
+
+
+/*if(typeof nconf.get('date')!== 'undefined'){
 	var date= nconf.get('date');
 	//console.log("date: " + date);
 	var results=addRaceData(date);
 	console.log(JSON.stringify(results));
 
 	
-}
+}*/
 
 function isEven(n) 
 {
