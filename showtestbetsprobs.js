@@ -34,7 +34,7 @@ nconf.defaults(
 
 
 
-var collections=["races","horses","trainingset","testbets"];
+var collections=["races","horses","trainingset","testbets","spbets"];
 var databaseUrl=nconf.get("databaseurl");
 var db = require("mongojs").connect(databaseUrl, collections);
 var goingMappings={"Firm":-3,"Good To Firm":-2,"Standard":-1,"Good":-1,"Good To Soft":0,"Good To Yielding":-1,"Standard To Slow":0,"Yielding":1,"Yielding To Soft":1,"Soft":1,"Soft To Heavy":2,"Heavy":3,"Very Soft":3}
@@ -166,7 +166,7 @@ for(var i=0;i<100;i++){
   archie[i]=0.0;
 }
 
-var betCursor=db.testbets.find();//there will only be WIN/FLAT bets in testbets for now
+var betCursor=db.spbets.find();//there will only be WIN/FLAT bets in testbets for now
 
 doProcessOne();
 
