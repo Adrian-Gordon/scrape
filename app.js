@@ -1859,6 +1859,36 @@ var parseHorseRaces = function( body) {
 	//}
 };
 
+var parseHorseRacesFromUrl = function( body) {
+  var racesArray=[];
+  //logger.info("Do Parse horse races" )
+  //if (error || response.statusCode != 200) {
+  //  logger.error(error);
+  //}
+  //else {
+    //console.log("body: " + body);
+    $ = cheerio.load(body);
+
+    $('#horse_form tr').each(function(i,elem){
+      if(!isEven(i)){
+        //logger.info("INDEX: " + i + " " + $(elem).find('td').first().find('a').text());
+        var raceId=$(elem).attr('id');
+        //logger.info('raceId: ' + raceId);
+        var dateS=$(elem).find('td').first().find('a').text();
+
+        var date=horseDateParser.parse(dateS);
+
+        //logger.info("Date: " + date);
+        racesArray.push(raceId);
+      }
+        
+
+    });
+    return(racesArray);
+    
+    
+};
+
 var parseHorseName = function( body) {
   
   //logger.info("Do Parse horse races" )
@@ -2863,10 +2893,10 @@ function getHorseRacesFromUrl(horseurl,req,res){
   var url="https://beta.racingpost.com" + horseurl;
 
   var resp=srequest("GET",url);
-  console.log(resp.getBody().toString());
- // var racesData=parseHorseRacesFromUrl(resp.getBody());
- // res.json(racesData);
- res.end();
+  //console.log(resp.getBody().toString());
+  var racesData=parseHorseRacesFromUrl(resp.getBody().toString());
+  res.json(racesData);
+ 
 }
 
 function getHorseName(req,res){
