@@ -2125,7 +2125,7 @@ var parseCardDataFromRaceUrl=function(raceurl,body){
 	//var dateText=$('.RC-courseHeader__date').text();
 	//console.log('dateText: ' + dateText);
 	var distanceRound=$('.RC-cardHeader__distance').text().trim();
-	logger.info("distanceRound: " + distanceRound);
+	//logger.info("distanceRound: " + distanceRound);
 
 	try{
 		var distObj=cardDistParser.parse(distanceRound);
@@ -2142,10 +2142,10 @@ var parseCardDataFromRaceUrl=function(raceurl,body){
 	var courseInformation=$('.RC-cardHeader__courseDetails span[data-test-selector]');
 	//console.log('courseInformation :' + courseInformation.html());
 	courseInformation.each(function(index){
-		console.log('text: '+ JSON.stringify($(this).get(0).attribs['data-test-selector']) + ' ' +$(this).text());
+		//console.log('text: '+ JSON.stringify($(this).get(0).attribs['data-test-selector']) + ' ' +$(this).text());
 		var selector=$(this).get(0).attribs['data-test-selector'];
 		if(selector=='RC-header__raceDistance'){
-			console.log('there is a full distance');
+			//console.log('there is a full distance');
 			try{
 			var distObj=cardDistParser.parse($(this).text().trim().replace('(','').replace(')',''));
 			//console.log('distance Obj: ' + JSON.stringify(distObj));
@@ -2177,7 +2177,7 @@ var parseCardDataFromRaceUrl=function(raceurl,body){
 			 conditionsText+= $(this).text().trim();
 		}
 	});
-	console.log("conditionsText: " +conditionsText);
+//	console.log("conditionsText: " +conditionsText);
 	try{
 	 object.conditions=cardConditionsParser.parse(conditionsText);
 	}catch(err){
@@ -2193,7 +2193,7 @@ var parseCardDataFromRaceUrl=function(raceurl,body){
 		//console.log($this).text();
 		var selector=$(this).get(0).attribs['data-test-selector'];
 		if(selector=="RC-headerBox__going"){
-			console.log("selector: " + selector + "text: " +$(this).text());
+		//	console.log("selector: " + selector + "text: " +$(this).text());
 			var goingEl=$(this).find('.RC-headerBox__infoRow__content');
 			var goingText= $(goingEl).text();
 			try{
@@ -2208,47 +2208,32 @@ var parseCardDataFromRaceUrl=function(raceurl,body){
 		}
 	});
 
-	return(object);
 	
-/*
+  $('.RC-runnerCardWrapper').each(function(index){
+    var horseLink=$(this).find('.RC-runnerMainWrapper a');
+    var hUrl=horseLink.attr('href');
+    var index = hUrl.indexOf('#');
+    hUrl=hUrl.substring(0,index);
+    var index1=hUrl.indexOf('horse/');
+    var index2=hUrl.lastIndexOf('/');
+    var hid=hUrl.substring(index1+6,index2);
+    var horseName=horseLink.text().trim().toUpperCase();
+    
 
+    var weight=$(this).find('.RC-runnerWgt__carried').get(0).attribs['data-order-wgt'];;
+
+ // console.log(hid + " horsename: " + horseName + " url: " + hUrl +" " +  weight);
+    object.horses[hid]={
+      name:horseName,
+      url:hUrl,
+      weight:weight
+    }
+
+  });
 	
-
-	$('#sc_horseCard tbody').each(function(){
-		if($(this).attr('id').match(/sc_/)){
-			//console.log('id: ' + $(this).attr('id'));
-			var anchors=$(this).find('a');
-			var index=0;
-			anchors.each(function(){
-				var href=$(this).attr('href');
-				if((href.indexOf('horse_id')!==-1)&&(href.indexOf('horse_home')!=-1)){
-					index++;
-					//console.log("href: " + href)
-					var i=href.indexOf('horse_id=');
-					var horseid=href.substring(i+9);
-					//console.log('horseid=' + horseid)
-					logger.info("NAME TEXT: " + $(this).text());
-					var weightS=$(this).parent().next().next().find('div').first().text()
-					logger.info("WEIGHT: " + weightS);
-					var weight=weightParser.parse(weightS);
-					logger.info("WEIGHT: " + weightS + " weight: " + weight);
-					object.horses[horseid]={
-						name:$(this).text(),
-						weight:weight
-					};
+  return(object);
 
 
-					//var hd=srequest('GET',horseRacesUrl);
-					//logger.info("horseid: " + horseid + " dates: " +hd);
-				}
-			})
-		}
-	})
-
-	
-
-	return(object);
-*/
 
 }
 
@@ -2850,13 +2835,38 @@ function getHorseDates(req,res){
 
 function getHorseRaces(req,res){
 
-	var horseid=req.query.horseid;
+  var horseid=req.query.horseid;
+  var horseurl=req.query.horseurl;
+
+  if(typeof horseid !== 'undefined'){
+    getHorseRacesFromId(horseid,req,res);
+  }
+  else{
+    getHorseRacesFromUrl(horseurl,req,res);
+  }
+}
+
+function getHorseRacesFromId(horseid,req,res){
+
+	//var horseid=req.query.horseid;
 	var url="http://www.racingpost.com/horses/horse_home.sd?horse_id=" + horseid;
 
 	var resp=srequest("GET",url);
 	var racesData=parseHorseRaces(resp.getBody());
 	res.json(racesData);
 
+}
+
+function getHorseRacesFromUrl(horseurl,req,res){
+
+  
+  var url="https://beta.racingpost.com" + horseurl;
+
+  var resp=srequest("GET",url);
+  console.log(resp.getBody().toString());
+ // var racesData=parseHorseRacesFromUrl(resp.getBody());
+ // res.json(racesData);
+ res.end();
 }
 
 function getHorseName(req,res){
@@ -2952,8 +2962,17 @@ function getCardDataFromRaceUrl(req,res,raceurl){
 
 	var resp=srequest("GET",url);
 	//console.log(resp.getBody().toString());
-
+  var index=0;
 	var cardData=parseCardDataFromRaceUrl(raceurl,resp.getBody().toString());
+  for(var horseid in cardData.horses){
+    var horse=cardData.horses[horseid];
+    var hurl=horse.url;
+    index++
+    logger.info("Get races for " + horseid + " from " + hurl);
+     horseRacesUrl="http://localhost:" + server.address().port + "/gethorseraces?horseurl=" + hurl;
+   }
+
+
 
 	/*var cardData=parseCardData(raceid,resp.getBody());
 
