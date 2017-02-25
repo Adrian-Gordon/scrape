@@ -1442,30 +1442,31 @@ function getDateCards(req,res){
 
   //console.log("DATE: " + date);
 
-	var url="http://www.racingpost.com/horses2/cards/home.sd?r_date=" + date;
+	var url=nconf.get('rprooturl')+ "/racecards/?r_date=" + date;
   logger.info("url: " + url);
 	var resp=srequest('GET',url);
   //logger.info(resp.getBody());
 
 	$ = cheerio.load(resp.getBody());
 
-	$('.rTitle a').each(function(index, value){
+	$('.RC-meetingItem a').each(function(index, value){
 		var raceUrl=$(value).attr('href');
-		var index1=raceUrl.indexOf("_id=");
-		var index2=raceUrl.indexOf("r_date");
-		var raceid=raceUrl.substring(index1+4,index2-1);
-		result.push(raceid);
+    logger.info("raceUrl: " + raceUrl);
+		//var index1=raceUrl.indexOf("_id=");
+		//var index2=raceUrl.indexOf("r_date");
+		//var raceid=raceUrl.substring(index1+4,index2-1);
+		result.push(raceUrl);
 
 	});
 
   if(typeof outbatch !== 'undefined' && outbatch=='true'){
       var sendString="";
       for(var i=0;i<result.length;i++){
-        var rid=result[i];
+        var rurl=result[i];
        // sudo node /Users/adriangordon/Development/GP/data/scrape/downloadcard --raceid 643501 > dbatchout0.txt 2>&1 &
        //sudo chmod +x dbatch0.sh
       //at -f dbatch0.sh now +1 minute
-        sendString=sendString+ "echo \"sudo node " + nconf.get('scrapedir') +"downloadcard --conf " + nconf.get('datadir')+"scrapeconfig.json --raceid  " + rid + " > " + nconf.get('datadir') + "dbatchout" + i + ".txt 2>&1 &\" > " + nconf.get('datadir')+"dbatch" +i +".sh\n";
+        sendString=sendString+ "echo \"sudo node " + nconf.get('scrapedir') +"downloadcard --conf " + nconf.get('datadir')+"scrapeconfig.json --raceurl  " + rurl + " > " + nconf.get('datadir') + "dbatchout" + i + ".txt 2>&1 &\" > " + nconf.get('datadir')+"dbatch" +i +".sh\n";
         sendString=sendString+"sudo chmod +x " + nconf.get('datadir') + "dbatch" + i + ".sh\n";
         //sendString=sendString+"at -f dbatch" + i + ".sh now +" + ((i + 1) +(i * nconf.get("delay"))) +" minute\n";
         sendString=sendString+"at -f " + nconf.get('datadir') + "dbatch" + i + ".sh now +" + i * nconf.get("delay") +" minute\n";
