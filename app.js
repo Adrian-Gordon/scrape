@@ -472,21 +472,31 @@ var timeParserStr="start=(ws /timeexpr)+\n"
 +"anything=.* {return null}\n";
 
 //distance beaten, this is:
-var distParserStr="start=(integerspace/integerfraction/fraction/space/desc)\n"
+var distParserStr="start=(integerspace/integerfraction/integer/fraction/space/desc)\n"
 +"integer 'integer'= digits:[0-9]+ { return parseInt(digits.join(''), 10); }\n"
 +"integerspace=int:integer ' '{return int}\n"
 +"integerfraction= int:integer frac:fraction {return (int + frac)}\n"
 +"fraction='\xBE ' {return 0.75}\n"
++"/'\xBE' {return 0.75}\n"
 +"/'\xBD ' {return 0.5}\n"
++"/'\xBD' {return 0.5}\n"
 +"/'\xBC ' {return 0.25}\n"
++"/'\xBC' {return 0.25}\n"
 +"space= ' ' {return 0}\n"
 +"desc='nk ' {return 0.25}\n"
++"/'nk' {return 0.25}\n"
 +"/'snk ' {return 0.25}\n"
++"/'snk' {return 0.25}\n"
 +"/'hd ' {return 0.1}\n"
++"/'hd' {return 0.1}\n"
++"/'nse' {return 0.02}\n"
 +"/'nse ' {return 0.02}\n"
 +"/'shd ' {return 0.05}\n"
++"/'shd' {return 0.05}\n"
 +"/'dht ' {return 0.0}\n"
++"/'dht' {return 0.0}\n"
 +"/'dist ' {return 30.0}\n"
++"/'dist' {return 30.0}\n"
 
 var weightParseStr="start=sts:integer '-' lbs:integer anything {return ((sts * 14) + lbs)}\n"
 +"integer 'integer'= digits:[0-9]+ { return parseInt(digits.join(''), 10); }\n"
@@ -562,7 +572,7 @@ var lengthsPerSecond={
 
 /* USAGE: getLPS('FLAT','AW','LINGFIELD (AW)', 'Good',)*/
 function getLPS(raceType,surface,course,going,url){
-	logger.info("getLPS " + raceType + " " + surface + " " + course + " " + going);
+	//logger.info("getLPS " + raceType + " " + surface + " " + course + " " + going);
 	try{
 	var lps;
 	var typeObj=lengthsPerSecond[raceType];
@@ -2508,7 +2518,7 @@ var parseResultPageBeta = function(url,body,lps) {
     object.horseids=[];
     object.horses={};
     object.url=url;
-    logger.info("url: " + url);
+   // logger.info("url: " + url);
     var i1=url.lastIndexOf('/');
     object.date=url.substring(i1-10,i1);
 
@@ -2516,11 +2526,11 @@ var parseResultPageBeta = function(url,body,lps) {
     $ = cheerio.load(body);
 
     var raceTime=$('h1 span').first().text();
-    console.log("raceTime: " + raceTime);
+   // console.log("raceTime: " + raceTime);
     object.time=raceTime;
 
     var course=$('h1 a').text().trim().toUpperCase();
-    logger.info("Course: " + course);
+   // logger.info("Course: " + course);
     object.course=course;
     
     var textDesc=$('h2').text();
@@ -2537,24 +2547,25 @@ var parseResultPageBeta = function(url,body,lps) {
     }
 
     var raceClassS=$(".rp-raceTimeCourseName_class").text().trim();
-    console.log("raceClassS: " + raceClassS);
+   // console.log("raceClassS: " + raceClassS);
 
     var raceAgesS=$(".rp-raceTimeCourseName_ratingBandAndAgesAllowed").text().trim();
 
-    console.log("raceAgesS: " + raceAgesS);
+   // console.log("raceAgesS: " + raceAgesS);
 
      object.conditions=conditionsParser.parse(raceClassS + raceAgesS);
 
 
     var raceDistFullS=$(".rp-raceTimeCourseName_distanceFull").text().trim();
 
-    console.log("raceDistFullS: " + raceDistFullS);
+   // console.log("raceDistFullS: " + raceDistFullS);
 
     if(raceDistFullS !== ""){
       var raceDistObj=conditionsParser.parse(raceDistFullS);
+     // console.log("raceDistObj: " + JSON.stringify(raceDistObj));
       if(raceDistObj[0] !== null){
 
-        if(typeof raceDistObj.miles == 'undefined')
+        if(typeof raceDistObj[0].miles == 'undefined')
             raceDistObj[0].miles=0;
           if(typeof raceDistObj[0].furlongs=='undefined')
             raceDistObj[0].furlongs=0;
@@ -2568,9 +2579,9 @@ var parseResultPageBeta = function(url,body,lps) {
     }
     else{
       var raceDistS=$(".rp-raceTimeCourseName_distance").text().trim();
-      console.log("raceDistS: " + raceDistS);
+     // console.log("raceDistS: " + raceDistS);
       var raceDistObj=conditionsParser.parse(raceDistS);
-      console.log('rdo: ' + JSON.stringify(raceDistObj));
+      //console.log('rdo: ' + JSON.stringify(raceDistObj));
       if(raceDistObj[0] !== null){
 
         if(typeof raceDistObj[0].miles == 'undefined')
@@ -2589,12 +2600,14 @@ var parseResultPageBeta = function(url,body,lps) {
     
 
      var goingS=$(".rp-raceTimeCourseName_condition").text().trim();
-     console.log("goingS: " + goingS);
+    // console.log("goingS: " + goingS);
      object.going=goingS;
 
      var raceTimeS=$(".rp-raceInfo span").eq(1).text().trim();
-     console.log("raceTimeS: " + raceTimeS);
-     object.racetime=timeParser.parse(raceTimeS);
+    // console.log("raceTimeS: " + raceTimeS);
+     object.racetime=timeParser.parse(raceTimeS)[0];
+     object.racetime.timeinseconds=(object.racetime.minutes * 60) + object.racetime.seconds + (object.racetime.milliseconds /100);
+     //console.log("Racetime: " + JSON.stringify(object.racetime));
 
      if(typeof lps=='undefined'){
       var surface="TURF";
@@ -2605,7 +2618,7 @@ var parseResultPageBeta = function(url,body,lps) {
       lps = getLPS(object.raceType,surface,object.course,object.going,url);
       object.surface=surface;
     }
-    console.log("lps: " + lps);
+   // console.log("lps: " + lps);
 
     
     var resultGrid=$(".rp-horseTable__mainRow");
@@ -2621,133 +2634,88 @@ var parseResultPageBeta = function(url,body,lps) {
           pos=pos.substring(0,index-1).trim();
         }
         else pos=pos.trim();
-      console.log("pos: " + pos);
+      //console.log("pos: " + pos);
 
       var horse=$(theTr).find(".rp-horseTable__horse a").first();
       var horseName=$(horse).text().trim().toUpperCase();
       var horseUrl=$(horse).attr('href');
-      console.log('horse: ' + horseName + " " + horseUrl);
+      var i1=horseUrl.indexOf('horse/');
+      var i2=nthIndex(horseUrl,'/',4);
+      var horseId=horseUrl.substring(i1+6,i2);
+
+
+      //console.log('horseid:' + horseId +' horseName: ' + horseName + " " + horseUrl);
 
       var horsePriceS=$(theTr).find(".rp-horseTable__horse__price").text().trim();
-      console.log("horsePriceS: " + horsePriceS);
+     // console.log("horsePriceS: " + horsePriceS);
       var price;
       try{
            price=priceParser.parse(horsePriceS);
           }catch(exception){
             price={fractiontop:0, fractionbottom:0}
       }
-      console.log('price: ' + JSON.stringify(price));
+     // console.log('price: ' + JSON.stringify(price));
 
       var weightStonesS=$(theTr).find(".rp-horseTable__wgt span").eq(0).text().trim();
-      console.log("weightStonesS: " + weightStonesS);
+     // console.log("weightStonesS: " + weightStonesS);
 
       var weightLbS=$(theTr).find(".rp-horseTable__wgt span").eq(1).text().trim();
-      console.log("weightLbS: " + weightLbS);
+     // console.log("weightLbS: " + weightLbS);
 
       var weight=parseInt(weightStonesS) * 14 + parseInt(weightLbS);
-      console.log("weight: " + weight);
-      
+      //console.log("weight: " + weight);
 
-    }
+      var beatenByS=$(theTr).find(".rp-horseTable__pos__length span").eq(0).text().trim();
 
-    return(object);
+      var beatenByCumulativeS=$(theTr).find(".rp-horseTable__pos__length span").eq(1).text().trim().replace('[','').replace(']','');
 
-   
+      var dist=0;
+      var cumulativeDist=0;
+     //  console.log("beatenByS: " + beatenByS + " beatenByCumulativeS: " + beatenByCumulativeS); 
 
-
-    var resultGrid=$('.resultRaceGrid').find('tr');
-    var cumulativeDistance=0;
-    for(var i=0;i<resultGrid.length;i++){
-      
-      var theTr=resultGrid[i];
-
-      var horseId=$(theTr).attr('data-hid');
-      var horseDistDesc=$(theTr).find('.dstDesc').text();
-      var horsePos=$(theTr).find('td h3').text();
-      var weightCarriedS=$(theTr).find('td:nth-child(6)').text();
-
-      var nameS=$(theTr).find('td:nth-child(4)').find("a").not(".pencil").text();
-      //logger.info("nameS: " + nameS);
-
-      var nameAndSPS=$(theTr).find('td:nth-child(4)').text();
-      //logger.info("nameAndSPS: " + nameAndSPS);
-      //logger.info("weight carried: " + weightCarriedS);
-
-      var price;
-
-      var dist;
-
-      //console.log("horseId: " + horseId + " horseDistDesc: |" + horseDistDesc + "|");
-
-      if(typeof horseId!='undefined'){
-        dist=distParser.parse(horseDistDesc);
-        //logger.info("dist: " + dist);
-        cumulativeDistance+=dist;
-        //logger.info("go parse: |" + nameAndSPS + "|");
-        //nameAndSPS="Evens";
-
-        if(nameAndSPS .indexOf('Evens') !== -1){
-          price={
-            "fractiontop":1,
-            "fractionbottom":1
-          }
-        }
-        else{
-          try{
-           price=priceParser.parse(nameAndSPS);
-          }catch(exception){
-            price={fractiontop:0, fractionbottom:0}
-          }
-        }
-        //logger.info("price: " + JSON.stringify(price));
+     // console.log('char: ' + beatenByCumulativeS.charCodeAt(2).toString(16));
+      if(parseInt(pos)==1){
 
       }
+      else if(parseInt(pos)==2){
+         dist=distParser.parse(beatenByS);
+         cumulativeDist=dist;
+      }
+      else{
+        dist=distParser.parse(beatenByS);
+       cumulativeDist=distParser.parse(beatenByCumulativeS);
+      }
+     
+      
+     // console.log("dist: " + dist + " cumulativeDist: " + cumulativeDist);
 
-       //dist=distParser.parse(horseDistDesc);
+      var cumulativetime=cumulativeDist * (1.0 / lps);
+      var totaltime=cumulativetime + object.racetime.timeinseconds;
+      var speed=object.distanceinmetres/totaltime;
 
-      //logger.info("horsePos: " + horsePos);
-      //logger.info('horseid: ' + horseId);
+     // console.log("cumulativetime: " + cumulativetime + " totaltime:  " + totaltime + " speed: " + speed);
+
       if(typeof horseId !== 'undefined'){
-        var weight=weightParser.parse(weightCarriedS);
+        //var weight=weightParser.parse(weightCarriedS);
         object.horseids.push(horseId);
-        object.horses[horseId]={name:nameS.toUpperCase(),dstDesc:horseDistDesc,pos:horsePos,dist:dist,cumulativedist:cumulativeDistance,weight:weight,price:price};
+        object.horses[horseId]={name:horseName,horseUrl,dstDesc:beatenByS,pos:parseInt(pos),dist:dist,cumulativedist:cumulativeDist,weight:weight,price:price,cumulativetime:cumulativetime,totaltime:totaltime,speed:speed};
       }
-    }
-
-    
-
-    var bs=$('.raceInfo b')
-
-    
-
-    if(typeof lps=='undefined'){
-      var surface="TURF";
-      if(object.going.indexOf('Standard') !== -1 ||object.going.indexOf('Fast')!== -1 ||object.going.indexOf('Slow')!== -1){
-        surface="AW"
-      }
-
-      lps = getLPS(object.raceType,surface,cd[0].course,object.going,url);
-      object.surface=surface;
-    }
-
-    logger.info("lps: " + lps);
-    if(typeof lps !== 'undefined'){
-      //logger.info("lps: " + lps);
-      for(key in object.horses){
-
-            //logger.info("KEY: " + key + " horse: " + JSON.stringify(parsedResult.racedata.horses[key]));
-            object.horses[key].cumulativetime=object.horses[key].cumulativedist * ( 1.0 /lps);
-
-            object.horses[key].totaltime=object.horses[key].cumulativetime + object.racetime.timeinseconds;
-            object.horses[key].speed=(object.distanceinmetres /object.horses[key].totaltime)
-          }
-
 
     }
 
     return(object);
+
 
   
+}
+
+function nthIndex(str, pat, n){
+    var L= str.length, i= -1;
+    while(n-- && i++<L){
+        i= str.indexOf(pat, i);
+        if (i < 0) break;
+    }
+    return i;
 }
 
 var parseDatePage=function(error,response,body){
