@@ -155,12 +155,14 @@ request({url:cardsUrl},function(error,response,body){
 
 });
 */
-processRaceData(nconf.get('raceid').toString());
+processRaceData(nconf.get('raceurl'));
 
 /*Download and process the data for a particular raceid*/
 
-function processRaceData(raceid){
-  console.log("processRaceData: " + raceid);
+function processRaceData(raceurl){
+  console.log("processRaceData: " + raceurl);
+  var index=raceurl.lastIndexOf('/');
+  var raceid=raceurl.substring(index+1,raceurl.length);
 
    db.cards.findOne({rpraceid:raceid},function(err,card){
 
@@ -174,7 +176,7 @@ function processRaceData(raceid){
         
       }
   
-      var raceUrl="http://" + host + ":" + port + "/getcarddata?raceid="+raceid;
+      var raceUrl="http://" + host + ":" + port + "/getcarddata?raceurl="+raceurl;
      // asyncCalls++;
       request({url:raceUrl},function(error,response,body){
        // asyncCalls--;
@@ -368,9 +370,11 @@ function processRunners(runners){
 
         for(var j=0;j<runner.races.length;j++){
           count++;
-          var raceid=runner.races[j];
+          var raceurl=runner.races[j];
+          var index=raceurl.lastIndexOf('/');
+          var raceid=raceurl.substring(index+1,raceurl.length);
           logger.info("Check horse: " + runnerid + " " + raceid);
-          db.perfstocheck.insert({runnerid:runnerid,raceid:raceid},function(err){
+          db.perfstocheck.insert({runnerid:runnerid,raceid:raceid,raceurl:raceurl},function(err){
 
             count--;
             if(count==0){

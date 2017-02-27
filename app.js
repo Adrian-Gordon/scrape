@@ -416,8 +416,11 @@ var conditionsParserStr="start=(ws /expr)+\n"
 +"/int:integer 'yo' {return {lower:int,upper:int}}\n"
 +"/lower:integer '-' upper:integer {return{ageconditions:{upper:upper,lower:lower}}}"
 +"distParExpr='(' miles:integer 'm' yards:integer 'y' ')' {return{conditiontype:'distancep',miles:miles,yards:yards}}\n"
++"/'(' miles:integer 'm' yards:integer 'yds' ')' {return{conditiontype:'distancep',miles:miles,yards:yards}}\n"
 +"/'(' furlongs:integer 'f' yards:integer 'y' ')' {return{conditiontype:'distancep',furlongs:furlongs,yards:yards}}\n"
++"/'(' furlongs:integer 'f' yards:integer 'yds' ')' {return{conditiontype:'distancep',furlongs:furlongs,yards:yards}}\n"
 +"/'(' miles:integer 'm' furlongs:integer 'f' yards:integer 'y' ')' {return{conditiontype:'distancep',miles:miles,furlongs:furlongs,yards:yards}}\n"
++"/'(' miles:integer 'm' furlongs:integer 'f' yards:integer 'yds' ')' {return{conditiontype:'distancep',miles:miles,furlongs:furlongs,yards:yards}}\n"
 +"distExpr=miles:integer 'm' furlongs:'\xBD' 'f' {return{conditiontype:'distance',miles:miles,furlongs:furlongs}}\n"
 +"/miles:integer 'm' furlongs:integer '\xBD' 'f' {return{conditiontype:'distance',miles:miles,furlongs:furlongs + '\xBD'}}\n"
 +"/miles:integer 'm' furlongs:integer 'f' {return{conditiontype:'distance',miles:miles,furlongs:furlongs}}\n"
@@ -526,6 +529,7 @@ var lengthsPerSecond={
 			 "SOUTHWELL (AW)" : 5,
 			 "CHELMSFORD (AW)":6,
 			 "DUNDALK (AW)":6,
+       "DUNDALK (AW) (IRE)":6,
        "MEYDAN":6,
        "AL AIN":6
 
@@ -672,6 +676,7 @@ app.get('/getdateresults',getDateResults);
 app.get('/getdatecards',getDateCards);
 
 /* USAGE: /getraceresult?raceid=627325 */
+/* /getraceresult?resulturl=/results/54/sandown/2017-02-04/666912*/
 app.get('/getraceresult',getRaceResult);
 
 /*USAGE: /gethorsedates?horseid=859709*/
@@ -1870,21 +1875,18 @@ var parseHorseRacesFromUrl = function( body) {
     //console.log("body: " + body);
     $ = cheerio.load(body);
 
-    $('#horse_form tr').each(function(i,elem){
-      if(!isEven(i)){
-        //logger.info("INDEX: " + i + " " + $(elem).find('td').first().find('a').text());
-        var raceId=$(elem).attr('id');
-        //logger.info('raceId: ' + raceId);
-        var dateS=$(elem).find('td').first().find('a').text();
-
-        var date=horseDateParser.parse(dateS);
-
-        //logger.info("Date: " + date);
-        racesArray.push(raceId);
-      }
+    $(".ui-table__cell a").each(function(i,elem){
+        var href=$(elem).attr('href');
+        if(href.indexOf('/results/')!=-1){
+          if ($(elem).attr("data-test-selector")=="item-table-date"){
+            //console.log("href: " + href);
+            racesArray.push(href);
+          }
+          
+        }
         
-
     });
+
     return(racesArray);
     
     
@@ -2499,6 +2501,255 @@ var parseResultPage = function(url,body,lps) {
 	
 }
 
+//parse result page from the beta site
+var parseResultPageBeta = function(url,body,lps) {
+
+    var object=new Object();
+    object.horseids=[];
+    object.horses={};
+    object.url=url;
+    logger.info("url: " + url);
+    var i1=url.lastIndexOf('/');
+    object.date=url.substring(i1-10,i1);
+
+    //console.log("body: " + body);
+    $ = cheerio.load(body);
+
+    var raceTime=$('h1 span').first().text();
+    console.log("raceTime: " + raceTime);
+    object.time=raceTime;
+
+    var course=$('h1 a').text().trim().toUpperCase();
+    logger.info("Course: " + course);
+    object.course=course;
+    
+    var textDesc=$('h2').text();
+
+    object.raceType='FLAT';
+    if(textDesc.toUpperCase().indexOf(' HURDLE') !== -1){
+      object.raceType='HURDLE';
+    }
+    else if(textDesc.toUpperCase().indexOf(' CHASE') !== -1){
+      object.raceType='CHASE';
+    }
+    else if(textDesc.toUpperCase().indexOf(' NATIONAL HUNT FLAT') !== -1){
+      object.raceType='NHFLAT';
+    }
+
+    var raceClassS=$(".rp-raceTimeCourseName_class").text().trim();
+    console.log("raceClassS: " + raceClassS);
+
+    var raceAgesS=$(".rp-raceTimeCourseName_ratingBandAndAgesAllowed").text().trim();
+
+    console.log("raceAgesS: " + raceAgesS);
+
+     object.conditions=conditionsParser.parse(raceClassS + raceAgesS);
+
+
+    var raceDistFullS=$(".rp-raceTimeCourseName_distanceFull").text().trim();
+
+    console.log("raceDistFullS: " + raceDistFullS);
+
+    if(raceDistFullS !== ""){
+      var raceDistObj=conditionsParser.parse(raceDistFullS);
+      if(raceDistObj[0] !== null){
+
+        if(typeof raceDistObj.miles == 'undefined')
+            raceDistObj[0].miles=0;
+          if(typeof raceDistObj[0].furlongs=='undefined')
+            raceDistObj[0].furlongs=0;
+          if(typeof raceDistObj[0].yards == 'undefined')
+            raceDistObj[0].yards=0;
+          //logger.info("distancep cond: " + JSON.stringify(cond));
+          object.distanceinyards=(raceDistObj[0].miles * 1760) + (raceDistObj[0].furlongs * 220) + raceDistObj[0].yards;
+          object.distanceinmetres=object.distanceinyards * 0.9144;
+
+      }
+    }
+    else{
+      var raceDistS=$(".rp-raceTimeCourseName_distance").text().trim();
+      console.log("raceDistS: " + raceDistS);
+      var raceDistObj=conditionsParser.parse(raceDistS);
+      console.log('rdo: ' + JSON.stringify(raceDistObj));
+      if(raceDistObj[0] !== null){
+
+        if(typeof raceDistObj[0].miles == 'undefined')
+            raceDistObj[0].miles=0;
+          if(typeof raceDistObj[0].furlongs=='undefined')
+            raceDistObj[0].furlongs=0;
+          if(typeof raceDistObj[0].yards == 'undefined')
+            raceDistObj[0].yards=0;
+          //logger.info("distancep cond: " + JSON.stringify(cond));
+          object.distanceinyards=(raceDistObj[0].miles * 1760) + (raceDistObj[0].furlongs * 220) + raceDistObj[0].yards;
+          object.distanceinmetres=object.distanceinyards * 0.9144;
+
+      }
+    }
+
+    
+
+     var goingS=$(".rp-raceTimeCourseName_condition").text().trim();
+     console.log("goingS: " + goingS);
+     object.going=goingS;
+
+     var raceTimeS=$(".rp-raceInfo span").eq(1).text().trim();
+     console.log("raceTimeS: " + raceTimeS);
+     object.racetime=timeParser.parse(raceTimeS);
+
+     if(typeof lps=='undefined'){
+      var surface="TURF";
+      if(object.going.indexOf('Standard') !== -1 ||object.going.indexOf('Fast')!== -1 ||object.going.indexOf('Slow')!== -1){
+        surface="AW"
+      }
+
+      lps = getLPS(object.raceType,surface,object.course,object.going,url);
+      object.surface=surface;
+    }
+    console.log("lps: " + lps);
+
+    
+    var resultGrid=$(".rp-horseTable__mainRow");
+
+    for(var i=0;i<resultGrid.length;i++){
+      
+      var theTr=resultGrid[i];
+
+
+      var pos=$(theTr).find(".rp-horseTable__pos__number").text();
+      var index=pos.indexOf('(');
+        if(index != -1){
+          pos=pos.substring(0,index-1).trim();
+        }
+        else pos=pos.trim();
+      console.log("pos: " + pos);
+
+      var horse=$(theTr).find(".rp-horseTable__horse a").first();
+      var horseName=$(horse).text().trim().toUpperCase();
+      var horseUrl=$(horse).attr('href');
+      console.log('horse: ' + horseName + " " + horseUrl);
+
+      var horsePriceS=$(theTr).find(".rp-horseTable__horse__price").text().trim();
+      console.log("horsePriceS: " + horsePriceS);
+      var price;
+      try{
+           price=priceParser.parse(horsePriceS);
+          }catch(exception){
+            price={fractiontop:0, fractionbottom:0}
+      }
+      console.log('price: ' + JSON.stringify(price));
+
+      var weightStonesS=$(theTr).find(".rp-horseTable__wgt span").eq(0).text().trim();
+      console.log("weightStonesS: " + weightStonesS);
+
+      var weightLbS=$(theTr).find(".rp-horseTable__wgt span").eq(1).text().trim();
+      console.log("weightLbS: " + weightLbS);
+
+      var weight=parseInt(weightStonesS) * 14 + parseInt(weightLbS);
+      console.log("weight: " + weight);
+      
+
+    }
+
+    return(object);
+
+   
+
+
+    var resultGrid=$('.resultRaceGrid').find('tr');
+    var cumulativeDistance=0;
+    for(var i=0;i<resultGrid.length;i++){
+      
+      var theTr=resultGrid[i];
+
+      var horseId=$(theTr).attr('data-hid');
+      var horseDistDesc=$(theTr).find('.dstDesc').text();
+      var horsePos=$(theTr).find('td h3').text();
+      var weightCarriedS=$(theTr).find('td:nth-child(6)').text();
+
+      var nameS=$(theTr).find('td:nth-child(4)').find("a").not(".pencil").text();
+      //logger.info("nameS: " + nameS);
+
+      var nameAndSPS=$(theTr).find('td:nth-child(4)').text();
+      //logger.info("nameAndSPS: " + nameAndSPS);
+      //logger.info("weight carried: " + weightCarriedS);
+
+      var price;
+
+      var dist;
+
+      //console.log("horseId: " + horseId + " horseDistDesc: |" + horseDistDesc + "|");
+
+      if(typeof horseId!='undefined'){
+        dist=distParser.parse(horseDistDesc);
+        //logger.info("dist: " + dist);
+        cumulativeDistance+=dist;
+        //logger.info("go parse: |" + nameAndSPS + "|");
+        //nameAndSPS="Evens";
+
+        if(nameAndSPS .indexOf('Evens') !== -1){
+          price={
+            "fractiontop":1,
+            "fractionbottom":1
+          }
+        }
+        else{
+          try{
+           price=priceParser.parse(nameAndSPS);
+          }catch(exception){
+            price={fractiontop:0, fractionbottom:0}
+          }
+        }
+        //logger.info("price: " + JSON.stringify(price));
+
+      }
+
+       //dist=distParser.parse(horseDistDesc);
+
+      //logger.info("horsePos: " + horsePos);
+      //logger.info('horseid: ' + horseId);
+      if(typeof horseId !== 'undefined'){
+        var weight=weightParser.parse(weightCarriedS);
+        object.horseids.push(horseId);
+        object.horses[horseId]={name:nameS.toUpperCase(),dstDesc:horseDistDesc,pos:horsePos,dist:dist,cumulativedist:cumulativeDistance,weight:weight,price:price};
+      }
+    }
+
+    
+
+    var bs=$('.raceInfo b')
+
+    
+
+    if(typeof lps=='undefined'){
+      var surface="TURF";
+      if(object.going.indexOf('Standard') !== -1 ||object.going.indexOf('Fast')!== -1 ||object.going.indexOf('Slow')!== -1){
+        surface="AW"
+      }
+
+      lps = getLPS(object.raceType,surface,cd[0].course,object.going,url);
+      object.surface=surface;
+    }
+
+    logger.info("lps: " + lps);
+    if(typeof lps !== 'undefined'){
+      //logger.info("lps: " + lps);
+      for(key in object.horses){
+
+            //logger.info("KEY: " + key + " horse: " + JSON.stringify(parsedResult.racedata.horses[key]));
+            object.horses[key].cumulativetime=object.horses[key].cumulativedist * ( 1.0 /lps);
+
+            object.horses[key].totaltime=object.horses[key].cumulativetime + object.racetime.timeinseconds;
+            object.horses[key].speed=(object.distanceinmetres /object.horses[key].totaltime)
+          }
+
+
+    }
+
+    return(object);
+
+  
+}
+
 var parseDatePage=function(error,response,body){
 	if (error || response.statusCode != 200) {
 		logger.error(error);
@@ -2636,23 +2887,18 @@ function parseResult(result){
 
 }
 
-/*function getRaceResult(req,res){
-		logger.info("in getRaceResult");
-		var returnObject=new Object();
-		var url=req.query.url;
-
-		logger.info("getRaceResult: " + url);
-
-		returnObject.status="OK";
-		returnObject.url=url;
-
-		res.json(returnObject);
-
-
-
-}*/
 
 function getRaceResult(req,res){
+  if(typeof req.query.raceid !== 'undefined'){
+    getRaceResultById(req,res);
+  }
+  else if(typeof req.query.resulturl !== 'undefined'){
+    getRaceResultByUrl(req,res);
+
+  }
+}
+
+function getRaceResultById(req,res){
 	var raceid=req.query.raceid;
 	var lps=req.query.lps;
   var adddata=req.query.adddata;
@@ -2684,6 +2930,49 @@ function getRaceResult(req,res){
   }
   else{
     var racedata=parseResultPage(url,resp.getBody(),lpsF);
+    if(adddata=='true'){
+        addRaceResultData(raceid,racedata,res);
+    }
+    else {
+      res.json(racedata);
+    }
+  }
+
+
+}
+
+function getRaceResultByUrl(req,res){
+  var resulturl=req.query.resulturl;
+  var lps=req.query.lps;
+  var adddata=req.query.adddata;
+
+  var lpsF;
+
+  if(typeof lps !== 'undefined'){
+    lpsF=parseFloat(lps);
+  }
+
+  var url=nconf.get('rprooturl') + resulturl;
+
+  var resp=srequest("GET",url);
+  //logger.info("getRaceResult response: " + resp.statusCode);
+  if(resp.statusCode !== 200){
+    resp=srequest("GET",url); //try again
+      if(resp.statusCode !== 200){
+        resp=srequest("GET",url); //and again
+      }
+  }
+
+  if(resp.statusCode !== 200){
+    logger.error("bad response code: " + resp.statusCode + " from: " + url);
+    var obj={
+      status:"ERROR",
+      message:"bad response code: " + resp.statusCode + " from: " + url
+    }
+    res.json(obj);
+  }
+  else{
+    var racedata=parseResultPageBeta(url,resp.getBody().toString(),lpsF);
     if(adddata=='true'){
         addRaceResultData(raceid,racedata,res);
     }
@@ -2890,13 +3179,21 @@ function getHorseRacesFromId(horseid,req,res){
 
 function getHorseRacesFromUrl(horseurl,req,res){
 
+  var i1=horseurl.indexOf("/horse");
+  var i2=horseurl.lastIndexOf('/');
+
+  var horseid=horseurl.substring(i1+6,i2);
+  var horsename=horseurl.substring(i2+1,horseurl.length);
   
-  var url="https://beta.racingpost.com" + horseurl;
+  var url=nconf.get('rprooturl')+ "/profile/horse/tabs/" + horseid + "/" + horsename + "/form/horse/0/0/1/desktop";
+
+  //console.log("horse url: " + url);
 
   var resp=srequest("GET",url);
   //console.log(resp.getBody().toString());
   var racesData=parseHorseRacesFromUrl(resp.getBody().toString());
   res.json(racesData);
+  
  
 }
 
@@ -2947,16 +3244,16 @@ function getCardDataFromRaceid(req,res,raceid){
 	var index=0;
 	for(var horseid in cardData.horses){
 		index++
-		logger.info("Get races for " + horseid);
+		//logger.info("Get races for " + horseid);
 		 horseRacesUrl="http://localhost:" + server.address().port + "/gethorseraces?horseid=" + horseid;
-					logger.info('horseRacesUrl: ' + horseRacesUrl);
+					//logger.info('horseRacesUrl: ' + horseRacesUrl);
 					var horseName=cardData.horses[horseid].name;
 					var horseWeight=cardData.horses[horseid].weight;
 					var r=function(hid,hn,hw){
 						request(horseRacesUrl,function(error,response,body){
 							index--;
               try{
-    							logger.info('body: ' + body);
+    							//logger.info('body: ' + body);
     							//if index==0;
     							cardData.horses[hid]={
     								races:JSON.parse(body),
@@ -2988,7 +3285,7 @@ function getCardDataFromRaceid(req,res,raceid){
 
 function getCardDataFromRaceUrl(req,res,raceurl){
 	//var raceid=req.query.raceid;
-	var url="https://beta.racingpost.com" + raceurl;
+	var url=nconf.get('rprooturl') + raceurl;
 	//console.log(url);
 
 	var resp=srequest("GET",url);
@@ -2999,54 +3296,31 @@ function getCardDataFromRaceUrl(req,res,raceurl){
     var horse=cardData.horses[horseid];
     var hurl=horse.url;
     index++
-    logger.info("Get races for " + horseid + " from " + hurl);
+    //logger.info("Get races for " + horseid + " from " + hurl);
      horseRacesUrl="http://localhost:" + server.address().port + "/gethorseraces?horseurl=" + hurl;
-   }
 
-
-
-	/*var cardData=parseCardData(raceid,resp.getBody());
-
-	//iterate over each horse, getting it's races
-	var index=0;
-	for(var horseid in cardData.horses){
-		index++
-		logger.info("Get races for " + horseid);
-		 horseRacesUrl="http://localhost:" + server.address().port + "/gethorseraces?horseid=" + horseid;
-					logger.info('horseRacesUrl: ' + horseRacesUrl);
-					var horseName=cardData.horses[horseid].name;
-					var horseWeight=cardData.horses[horseid].weight;
-					var r=function(hid,hn,hw){
-						request(horseRacesUrl,function(error,response,body){
-							index--;
+     var r=function(hid){
+            request(horseRacesUrl,function(error,response,body){
+              index--;
               try{
-    							logger.info('body: ' + body);
-    							//if index==0;
-    							cardData.horses[hid]={
-    								races:JSON.parse(body),
-    								status:"OK",
-    								name:hn,
-    								weight:hw
-    							}
+                  //logger.info('body: ' + body);
+                  //if index==0;
+                  cardData.horses[hid].races=JSON.parse(body);
+
+                 
               }catch(exception){
                 //it didn't work
                 logger.error(JSON.stringify("Exception: " + exception + " in: " + horseRacesUrl + " body: " + body));
               }
-							if(index==0){ //we've done all horses
-								res.json(cardData);
+              if(index==0){ //we've done all horses
+                res.json(cardData);
 
-							}
-						});
-					}(horseid,horseName,horseWeight)
-					
-	}
-
-	*/
+              }
+            });
+          }(horseid)
+   }
 
 
-	
-	res.json(cardData);
-	//res.end();
 
 }
 
