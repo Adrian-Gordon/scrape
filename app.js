@@ -2899,7 +2899,7 @@ function getRaceResultById(req,res){
   else{
     var racedata=parseResultPage(url,resp.getBody(),lpsF);
     if(adddata=='true'){
-        addRaceResultData(raceid,racedata,res);
+        addRaceResultData(raceid,racedata,null,res);
     }
     else {
       res.json(racedata);
@@ -2942,7 +2942,7 @@ function getRaceResultByUrl(req,res){
   else{
     var racedata=parseResultPageBeta(url,resp.getBody().toString(),lpsF);
     if(adddata=='true'){
-        addRaceResultData(raceid,racedata,res);
+        addRaceResultData(raceid,racedata,resulturl,res);
     }
     else {
       res.json(racedata);
@@ -2952,7 +2952,7 @@ function getRaceResultByUrl(req,res){
 
 }
 
-function addRaceResultData(raceid,result,res){
+function addRaceResultData(raceid,result,resulturl,res){
     if(result.status =="ERROR"){
       res.json(result);
       return;
@@ -2976,6 +2976,7 @@ function addRaceResultData(raceid,result,res){
    raceDocument.surface=result.surface;
    raceDocument.racetype=result.raceType;
    raceDocument.winningtime=result.racetime.timeinseconds;
+   raceDocument.resulturl=resulturl;
 
    var conditions=result.conditions;
    for(var x=0;x<conditions.length;x++){
@@ -3023,7 +3024,8 @@ function addRaceResultData(raceid,result,res){
                         weight:horseData.weight,
                         speed:horseData.speed,
                         position:horseData.pos,
-                        price: horseData.price
+                        price: horseData.price,
+                        resulturl:resulturl
                       }
                       //logger.info("horsedoc: " + JSON.stringify(horseDoc));
                       asyncCalls++;
@@ -3053,7 +3055,8 @@ function addRaceResultData(raceid,result,res){
                         weight:horseData.weight,
                         speed:horseData.speed,
                         position:horseData.pos,
-                        price: horseData.price
+                        price: horseData.price,
+                        resulturl:resulturl
 
                       }
                       asyncCalls++;
