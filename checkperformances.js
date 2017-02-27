@@ -120,15 +120,22 @@ function processOnePerformance(){
       var id=perf._id;
       var horseid=perf.runnerid;
       var raceid=perf.raceid;
-     // logger.info('check ' + horseid + " " + raceid);
+      var raceUrl=perf.raceurl;
+      logger.info('check ' + horseid + " " + raceid);
 
       //now go check the performance
-      var fn = function(hid,rid,pid){
+      var fn = function(hid,rid,rurl,pid){
           db.horses.findOne({_id:horseid},function(err,horse){
             if(!horse){
               logger.info("horse not there: " + hid);
-
-              var url="http://" + nconf.get("host") + ":" + nconf.get("port") + "/getraceresult?raceid=" + rid + "&adddata=true";
+              var url;
+              if(typeof rid !== 'undefined'){
+                url="http://" + nconf.get("host") + ":" + nconf.get("port") + "/getraceresult?raceid=" + rid + "&adddata=true";
+              }
+              else if(typeof rurl != 'undefined'){
+                url="http://" + nconf.get("host") + ":" + nconf.get("port") + "/getraceresult?raceurl=" + rurl + "&adddata=true";
+              }
+              
               request(url, function(err,resp,body){
                 if(err){
                   logger.error(JSON.stringify(err));
@@ -153,13 +160,20 @@ function processOnePerformance(){
 
             }
             else{
+              logger.info("horse is there");
               var horsePerfs=horse.performances;
               //logger.info("horsePers: " + JSON.stringify(horse));
               var thisPerf=horsePerfs[rid];
 
               if(typeof thisPerf=='undefined'){
                 logger.info("horse perf not there: " + hid + " " + rid);
-                var url="http://" + nconf.get("host") + ":" + nconf.get("port") + "/getraceresult?raceid=" + rid + "&adddata=true";
+                var url;
+              if(typeof rid !== 'undefined'){
+                url="http://" + nconf.get("host") + ":" + nconf.get("port") + "/getraceresult?raceid=" + rid + "&adddata=true";
+              }
+              else if(typeof rurl != 'undefined'){
+                url="http://" + nconf.get("host") + ":" + nconf.get("port") + "/getraceresult?raceurl=" + rurl + "&adddata=true";
+              }
                 request(url, function(err,resp,body){
                   if(err){
                     logger.error(JSON.stringify(err));
@@ -184,6 +198,7 @@ function processOnePerformance(){
                 });
               }
               else{
+                logger.info("performance already there");
                  db.perfstocheck.remove({_id:id},function(err){
 
                     processOnePerformance();//get the next one
@@ -196,7 +211,7 @@ function processOnePerformance(){
           });
 
 
-      }(horseid,raceid,id);
+      }(horseid,raceid,raceUrl,id);
       
 
 
