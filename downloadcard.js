@@ -42,6 +42,7 @@ var moment=require('moment');
 
 var collections=["races","horses","cards","perfstocheck"];
 var databaseUrl=nconf.get("databaseurl");
+//console.log("databseurl: " + databaseUrl);
 var db = require("mongojs").connect(databaseUrl, collections);
 
 
@@ -160,9 +161,10 @@ processRaceData(nconf.get('raceurl'));
 /*Download and process the data for a particular raceid*/
 
 function processRaceData(raceurl){
-  console.log("processRaceData: " + raceurl);
+  
   var index=raceurl.lastIndexOf('/');
   var raceid=raceurl.substring(index+1,raceurl.length);
+  console.log("processRaceData: " + raceurl + " raceid: " + raceid);
 
    db.cards.findOne({rpraceid:raceid},function(err,card){
 
