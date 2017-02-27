@@ -189,7 +189,7 @@ function processRaceData(raceurl){
           logger.info("Race: " + JSON.stringify(race));
           if(race.status=="ERROR"){
             logger.error(JSON.stringify(race));
-            return;
+            process.exit();
           }
           var date=race.date.year + "-" + race.date.month + "-" + race.date.day;
 
