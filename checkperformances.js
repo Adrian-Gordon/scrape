@@ -171,7 +171,7 @@ function processOnePerformance(){
               if(typeof rid !== 'undefined'){
                 url="http://" + nconf.get("host") + ":" + nconf.get("port") + "/getraceresult?raceid=" + rid + "&adddata=true";
               }
-              else if(typeof rurl != 'undefined'){
+              if(typeof rurl != 'undefined'){
                 url="http://" + nconf.get("host") + ":" + nconf.get("port") + "/getraceresult?raceurl=" + rurl + "&adddata=true";
               }
                 request(url, function(err,resp,body){
