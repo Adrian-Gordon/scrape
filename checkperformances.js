@@ -133,7 +133,7 @@ function processOnePerformance(){
                 url="http://" + nconf.get("host") + ":" + nconf.get("port") + "/getraceresult?raceid=" + rid + "&adddata=true";
               }
               else if(typeof rurl != 'undefined'){
-                url="http://" + nconf.get("host") + ":" + nconf.get("port") + "/getraceresult?raceurl=" + rurl + "&adddata=true";
+                url="http://" + nconf.get("host") + ":" + nconf.get("port") + "/getraceresult?resulturl=" + rurl + "&adddata=true";
               }
               
               request(url, function(err,resp,body){
@@ -172,8 +172,9 @@ function processOnePerformance(){
                 url="http://" + nconf.get("host") + ":" + nconf.get("port") + "/getraceresult?raceid=" + rid + "&adddata=true";
               }
               if(typeof rurl != 'undefined'){
-                url="http://" + nconf.get("host") + ":" + nconf.get("port") + "/getraceresult?raceurl=" + rurl + "&adddata=true";
+                url="http://" + nconf.get("host") + ":" + nconf.get("port") + "/getraceresult?resulturl=" + rurl + "&adddata=true";
               }
+              logger.info("url: " + url);
                 request(url, function(err,resp,body){
                   if(err){
                     logger.error(JSON.stringify(err));

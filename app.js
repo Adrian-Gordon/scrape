@@ -458,6 +458,7 @@ var conditionsParserStr="start=(ws /expr)+\n"
 +"/going:'Holding' anything {return{conditiontype:'going',going:'Soft'}}\n"
 +"/going:'Soft' anything {return{conditiontype:'going',going:going}}\n"
 +"/going:'Good To Soft' anything {return{conditiontype:'going',going:going}}\n"
++"/going:'Yielding To Soft' anything {return{conditiontype:'going',going:going}}\n"
 +"/going:'Good To Firm' anything {return{conditiontype:'going',going:going}}\n"
 +"/going:'Good To Yielding' anything {return{conditiontype:'going',going:going}}\n"
 +"/going:'Good' anything {return{conditiontype:'going',going:going}}\n"
@@ -2555,7 +2556,9 @@ var parseResultPageBeta = function(url,body,lps) {
 
    // console.log("raceAgesS: " + raceAgesS);
 
-     object.conditions=conditionsParser.parse(raceClassS + raceAgesS);
+      var condsS=raceClassS + raceAgesS;
+     if(condsS !="")
+        object.conditions=conditionsParser.parse(condsS);
 
 
     var raceDistFullS=$(".rp-raceTimeCourseName_distanceFull").text().trim();
@@ -2684,8 +2687,16 @@ var parseResultPageBeta = function(url,body,lps) {
          cumulativeDist=dist;
       }
       else{
-        dist=distParser.parse(beatenByS);
-       cumulativeDist=distParser.parse(beatenByCumulativeS);
+        if(beatenByS !== ""){
+           dist=distParser.parse(beatenByS);
+           cumulativeDist=distParser.parse(beatenByCumulativeS);
+        }
+
+       
+      }
+      if(cumulativeDist==0){
+        dist=500;
+        cumulativeDist=500;
       }
      
       
@@ -2916,7 +2927,10 @@ function getRaceResultByUrl(req,res){
   var lps=req.query.lps;
   var adddata=req.query.adddata;
 
+  var index=resulturl.lastIndexOf('/');
+  var raceid=resulturl.substring(index+1,resulturl.length);
   var lpsF;
+  logger.info("resulturl: " + resulturl + " raceid: " + raceid);
 
   if(typeof lps !== 'undefined'){
     lpsF=parseFloat(lps);
@@ -2981,11 +2995,14 @@ function addRaceResultData(raceid,result,resulturl,res){
    raceDocument.resulturl=resulturl;
 
    var conditions=result.conditions;
-   for(var x=0;x<conditions.length;x++){
+   if(typeof conditions !== 'undefined'){
+    for(var x=0;x<conditions.length;x++){
     if(conditions[x]!==null){
       raceDocument.conditions.push(conditions[x]);
     }
+    }
    }
+   
    //logger.info(JSON.stringify(raceDocument));
   
    insertRaceDocument(raceDocument);

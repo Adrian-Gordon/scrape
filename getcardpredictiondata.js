@@ -356,7 +356,7 @@ function predict(cdObject){
           //go get the Gaussian sigma
           var cmd="java -cp " + nconf.get('classpath') + " GaussianFit2 \"{'observations':" + JSON.stringify(horse.distPredictions) + "}\"";
           logger.info("cmd: " + cmd);
-          /*
+          
           var gaussianParams=execSync(cmd);
          // logger.info('gaussian: ' + gaussian);
          //logger.info('GPs: ' + gaussianParams);
@@ -380,7 +380,7 @@ function predict(cdObject){
             fourth:0,
             winProbablity:0.0,
             placeProbability:0.0
-          }*/
+          }
 
         }
         //logger.info(JSON.stringify(cdObject));
