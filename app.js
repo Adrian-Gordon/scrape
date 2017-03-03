@@ -2694,7 +2694,7 @@ var parseResultPageBeta = function(url,body,lps) {
 
        
       }
-      if(cumulativeDist==0){
+      if((cumulativeDist==0)&&(parseInt(pos) !== 1)){
         dist=500;
         cumulativeDist=500;
       }
