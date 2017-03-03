@@ -123,9 +123,11 @@ function processOnePerformance(){
       var raceUrl=perf.raceurl;
       var replace=perf.replace;
       var replaceS="";
+      var doReplace=false;
 
       if(typeof replace != 'undefined'){
         replaceS="&replace=true";
+        doReplace=true;
 
       }
       logger.info('check ' + horseid + " " + raceid);
@@ -172,7 +174,7 @@ function processOnePerformance(){
               //logger.info("horsePers: " + JSON.stringify(horse));
               var thisPerf=horsePerfs[rid];
 
-              if(typeof thisPerf=='undefined'){
+              if((typeof thisPerf=='undefined')||doReplace){
                 logger.info("horse perf not there: " + hid + " " + rid);
                 var url;
               if(typeof rid !== 'undefined'){
