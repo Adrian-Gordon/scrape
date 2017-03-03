@@ -690,6 +690,8 @@ app.get('/getdatecards',getDateCards);
 
 /* USAGE: /getraceresult?raceid=627325 */
 /* /getraceresult?resulturl=/results/54/sandown/2017-02-04/666912*/
+/*optionally &adddata=true */
+/*optionally &replace=true*/
 app.get('/getraceresult',getRaceResult);
 
 /*USAGE: /gethorsedates?horseid=859709*/
@@ -2883,6 +2885,7 @@ function getRaceResultById(req,res){
 	var raceid=req.query.raceid;
 	var lps=req.query.lps;
   var adddata=req.query.adddata;
+  
 
 	var lpsF;
 
@@ -2926,6 +2929,7 @@ function getRaceResultByUrl(req,res){
   var resulturl=req.query.resulturl;
   var lps=req.query.lps;
   var adddata=req.query.adddata;
+  
 
   var index=resulturl.lastIndexOf('/');
   var raceid=resulturl.substring(index+1,resulturl.length);
@@ -3004,8 +3008,16 @@ function addRaceResultData(raceid,result,resulturl,res){
    }
    
    //logger.info(JSON.stringify(raceDocument));
-  
-   insertRaceDocument(raceDocument);
+  //insert the race document, if it is not already there
+  db.races.findOne({_id:raceid},function(err,race){
+    if(race){
+      logger.info("Race alrady there: " +race._id);
+    }
+    else{
+      insertRaceDocument(raceDocument);
+    }
+  });
+   //insertRaceDocument(raceDocument);
    for(var horseid in result.horses ){
            // logger.info("horseid: " + horseid);
              var horseData=result.horses[horseid];

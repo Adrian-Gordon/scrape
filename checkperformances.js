@@ -121,6 +121,13 @@ function processOnePerformance(){
       var horseid=perf.runnerid;
       var raceid=perf.raceid;
       var raceUrl=perf.raceurl;
+      var replace=perf.replace;
+      var replaceS="";
+
+      if(typeof replace != 'undefined'){
+        replaceS="&replace=true";
+
+      }
       logger.info('check ' + horseid + " " + raceid);
 
       //now go check the performance
@@ -130,10 +137,10 @@ function processOnePerformance(){
               logger.info("horse not there: " + hid);
               var url;
               if(typeof rid !== 'undefined'){
-                url="http://" + nconf.get("host") + ":" + nconf.get("port") + "/getraceresult?raceid=" + rid + "&adddata=true";
+                url="http://" + nconf.get("host") + ":" + nconf.get("port") + "/getraceresult?raceid=" + rid + "&adddata=true" + replaceS;
               }
               else if(typeof rurl != 'undefined'){
-                url="http://" + nconf.get("host") + ":" + nconf.get("port") + "/getraceresult?resulturl=" + rurl + "&adddata=true";
+                url="http://" + nconf.get("host") + ":" + nconf.get("port") + "/getraceresult?resulturl=" + rurl + "&adddata=true" + replaceS;
               }
               
               request(url, function(err,resp,body){
