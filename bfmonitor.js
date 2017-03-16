@@ -1,4 +1,3 @@
-//curl -k -i -H "Accept: application/json" -H "X-Application: 4aKsklD3MSksYs8h" -X POST -d 'username=agordon&password=helgas04' https://identitysso.betfair.com/api/login
  var moment=require('moment');
  gaussian=require('gaussian');
 var httpRequest = require('request');
@@ -208,7 +207,7 @@ function bfLogin(raceid,marketid){
   logger.info("bfLogin: " + raceid + " marketid: " + marketid);
 
 	httpRequest({
-            url: "https://identitysso.betfair.com/api/login?username=agordon&password=helgas04",
+            url: "https://identitysso.betfair.com/api/login?username=" + nconf.get('bfusername') +"&password=" + nconf.get('bfpw'),
             method: "POST",  
             headers: {
 			    'X-Application': nconf.get('apikey'),

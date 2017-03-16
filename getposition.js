@@ -106,7 +106,7 @@ function bfLogin(){
  logger.info("startDate: " + startDate);
 
   httpRequest({
-            url: "https://identitysso.betfair.com/api/login?username=agordon&password=helgas04",
+            url: "https://identitysso.betfair.com/api/login?username=" + nconf.get('bfusername') +"&password=" + nconf.get('bfpw'),
             method: "POST",  
             headers: {
           'X-Application': nconf.get('apikey'),

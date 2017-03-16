@@ -51,7 +51,9 @@ nconf.defaults(
       "alpha":53.997,
       "beta":12.754,
       "loc":6.936,
-      "scale":11.678
+      "scale":11.678,
+      "maxdatediff":180,
+      "maxgoingdiff":2
 });
 
 
@@ -132,7 +134,12 @@ var moment=require('moment');
 
 var host=nconf.get("host");
 var port=nconf.get("port");
+var addBet=true;
 
+var addBetS=nconf.get('add');
+if(addBetS=='false'){
+  addBet=false;
+}
 
 
 
@@ -152,7 +159,7 @@ getRacePredictionData(nconf.get("raceid").toString(),predict);
 
 function getRacePredictionData(theraceid,callback){
 db.spbets.findOne({"rpraceid":theraceid},function(err,spbet){
-  if(spbet){
+  if(spbet && addBet){
     logger.error("spbet for " + theraceid + " already exists");
     process.exit();
 
@@ -343,7 +350,8 @@ db.spbets.findOne({"rpraceid":theraceid},function(err,spbet){
                               surface:perf.surface
 
                             }
-                            ro.perfs.push(perfObject);
+                            if((Math.abs(perfObject.goingdiff) <= nconf.get("maxgoingdiff"))&&(perfObject.datediff <= nconf.get('maxdatediff')))
+                                ro.perfs.push(perfObject);
                             //ro.name=cr.name;
                            // logger.info("   perfObject: " + JSON.stringify(perfObject));
                           }
@@ -398,6 +406,12 @@ function predict(cdObject){
           horse.cumulativePredictions=0;
           //logger.info(JSON.stringify(horse));
           var distPredictions=new Array();
+          var distPredictionsFull=new Array();
+
+          if(horse.perfs.length==0){
+            logger.error("Horse with no qualifying form");
+            process.exit();
+          }
 
            //Now generate predictions for each performance;
           //var predictNode=new gpnode.parseNode(nconf.get('rule'));
@@ -421,11 +435,13 @@ function predict(cdObject){
                 var predicted= s1 + ((s1*val)/100000);
                 //logger.info('predicted: ' +predicted);
                 distPredictions.push(predicted);
+                distPredictionsFull.push({perf:perf,predicted:predicted});
                
 
           }
 
           horse.distPredictions=distPredictions;
+          horse.distPredictionsFull=distPredictionsFull;
           //logger.info(JSON.stringify(horse));
 
 
@@ -445,9 +461,9 @@ function gatherHorseNames(cdObject){
     var count=Object.keys(cdObject.horses).length;//length
    for(horseid in cdObject.horses){
       var url="http://" + nconf.get("host")+ ":" + nconf.get("port") + "/gethorsename?horseid=" + horseid;
-      //logger.info(url);
+      logger.info(url);
       request(url, function(err,resp,body){
-        //logger.info(body);
+        logger.info(body);
         if(err){
           logger.error(err);
         }
@@ -455,7 +471,7 @@ function gatherHorseNames(cdObject){
         var horseName=horsedetails.name;
         horsenameLookup[horsedetails.id]=horseName.replace(/'/g,'');
         count--;
-       // logger.info("count: " + count);
+        logger.info("count: " + count);
         if(count==0){
           //we've finished
          // logger.info(JSON.stringify(horsenameLookup));
@@ -521,10 +537,18 @@ function outputToSPbetObject(horsenameLookup,bfodds,cdObject){
       //logger.info("predict for horse: " + horseid);
       var horse=cdObject.horses[horseid];
     //  logger.info("horse: " + JSON.stringify(horse));
+      var totalSpeed=0.0;
+      for(var i=0;i<horse.distPredictions.length;i++){
+        totalSpeed+=horse.distPredictions[i];
+      }
+      var averageSpeed=totalSpeed/horse.distPredictions.length;
       var horseObj={
         name:horsenameLookup[horseid],
         mean:horse.meanPredicted,
         sigma:horse.gaussianSigma,
+        observedMode:horse.observedMode,
+        modeTranslate:horse.modeTranslate,
+        averageSpeed:averageSpeed,
         rphorseid:horseid,
         status:horse.status,
         bestLayWinPrice:bfodds[horsenameLookup[horseid]],
@@ -533,13 +557,15 @@ function outputToSPbetObject(horsenameLookup,bfodds,cdObject){
         trialsResults:horse.trialsResults,
         winProbability:horse.trialsResults.winProbability,
         winLayReturn:((1-horse.trialsResults.winProbability)/(1-(1/horse.bestLayWinPrice))) -1,
-        winBackReturn:(horse.trialsResults.winProbability/(1/horse.bestBackWinPrice)-1)
+        winBackReturn:(horse.trialsResults.winProbability/(1/horse.bestBackWinPrice)-1),
+        distPredictions:horse.distPredictions,
+        distPredictionsFull:horse.distPredictionsFull
       }
       obj.horses[horseid]=horseObj;
 
   }
   logger.info(JSON.stringify(obj));
-  db.spbets.insert(obj);
+  if(addBet)db.spbets.insert(obj);
   process.exit();
 
 }
@@ -562,12 +588,14 @@ function buildBetaDistributionParameters(horses){
           }
 
         var observations=horse.distPredictions;
+       // logger.info(JSON.stringify(horse));
 
         var min=0;
         var max=0;
         var nbins=20;
         var bins;
         var modeIndex;
+        var maxCount=0;
 
         do{
           //console.log("nbins: " + nbins);
@@ -606,7 +634,7 @@ function buildBetaDistributionParameters(horses){
 
           //find the mode
 
-          var maxCount=0;
+           maxCount=0;
            modeIndex=0;
           for(var i=0;i<nbins;i++){
             var count=bins[i];
@@ -618,7 +646,11 @@ function buildBetaDistributionParameters(horses){
           }
           //console.log("mode count: " + bins[modeIndex]);
           nbins--;
-        }while((bins[modeIndex]< 6)&&(nbins > 0)); //we must have a mode
+          if(nbins==0){
+            break;
+          }
+          if((bins[modeIndex]>=3)&&(modeCount(bins,maxCount)==1))break;
+        }while(true)//((bins[modeIndex]< 6)&&(nbins > 0)); //we must have a mode
 
 
         //console.log("MODE INDEX: " + modeIndex);
@@ -627,7 +659,7 @@ function buildBetaDistributionParameters(horses){
         var observedMode=min + (modeIndex * binWidth) + (binWidth/2);
         //console.log("observedModeValue: " +observedModeValue );
         var modeTranslate=observedMode-predictedMode; //sift of mode of the distribution
-
+        horse.observedMode=observedMode;
         horse.modeTranslate=modeTranslate;
         //horse.betaMaxValue=max;
         //horse.betaMinValue=calculatedMinValue;
@@ -637,6 +669,17 @@ function buildBetaDistributionParameters(horses){
 
 
     }
+
+}
+
+function modeCount(bins,maxCount){
+  var count=0;
+  for(var i=0;i< bins.length;i++){
+    if(bins[i]==maxCount)count++;
+  }
+  //console.log(maxCount + JSON.stringify(bins) + count);
+  return(count);
+
 
 }
 

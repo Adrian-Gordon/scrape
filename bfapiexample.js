@@ -1,7 +1,5 @@
 //App key: 4aKsklD3MSksYs8h
 
-//curl -k -i -H "Accept: application/json" -H "X-Application: 4aKsklD3MSksYs8h" -X POST -d 'username=agordon&password=helgas04' https://identitysso.betfair.com/api/login
-
 var https = require('https');
 
 // Start the app
