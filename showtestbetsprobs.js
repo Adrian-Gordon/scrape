@@ -166,7 +166,7 @@ for(var i=0;i<100;i++){
   archie[i]=0.0;
 }
 
-var betCursor=db.spbets.find();//there will only be WIN/FLAT bets in testbets for now
+var betCursor=db.testbets.find();//there will only be WIN/FLAT bets in testbets for now
 
 doProcessOne();
 

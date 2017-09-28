@@ -41,9 +41,12 @@ nconf.defaults(
 var moment=require('moment');
 
 var collections=["races","horses","cards","perfstocheck"];
-var databaseUrl=nconf.get("databaseurl");
+var databaseUrl="mongodb://" + nconf.get("databaseurl");
 //console.log("databseurl: " + databaseUrl);
-var db = require("mongojs").connect(databaseUrl, collections);
+//var db = require("mongojs").connect(databaseUrl, collections);
+
+var MongoClient=require('mongodb').MongoClient;
+
 
 
 
@@ -156,17 +159,27 @@ request({url:cardsUrl},function(error,response,body){
 
 });
 */
+
+//logger.error("databaseUrl: " + databaseUrl);
 processRaceData(nconf.get('raceurl'));
 
 /*Download and process the data for a particular raceid*/
 
 function processRaceData(raceurl){
+
+  MongoClient.connect(databaseUrl,function(err,db){
+    if(err) throw(err);
+
+
+
+
+
   
   var index=raceurl.lastIndexOf('/');
   var raceid=raceurl.substring(index+1,raceurl.length);
   console.log("processRaceData: " + raceurl + " raceid: " + raceid);
 
-   db.cards.findOne({rpraceid:raceid},function(err,card){
+   db.collection("cards").findOne({rpraceid:raceid},function(err,card){
 
       if(err){
          logger.error(JSON.stringify(err));
@@ -245,7 +258,8 @@ function processRaceData(raceurl){
 
            
             //logger.info("Race: " + race.raceid);
-           raceDocument._id=db.ObjectId();
+           //raceDocument._id=db.ObjectId();
+           raceDocument._id = require('mongodb').ObjectID;
            raceDocument.runners=race.horses;
            raceDocument.distance=distanceInMetres;
            raceDocument.going=race.going.going;
@@ -262,12 +276,12 @@ function processRaceData(raceurl){
            logger.info(JSON.stringify(raceDocument));
 
         
-            db.cards.insert(raceDocument,function(err,result){
+            db.collection("cards").insert(raceDocument,function(err,result){
              
                 logger.info("Inserted Card");
                 //process.exit();
 
-                processRunners(raceDocument.runners);
+                processRunners(db,raceDocument.runners);
            
             });
            
@@ -350,6 +364,7 @@ function processRaceData(raceurl){
           logger.error(raceid);
           logger.error(err);
           logger.error("parsing: " + body);
+          process.exit();
         }
         //if(asyncCalls==0){
         //    logger.info("DONE");
@@ -357,12 +372,13 @@ function processRaceData(raceurl){
        //   }
 
       });
-  })
+  });
+});
 
 
 }
 
-function processRunners(runners){
+function processRunners(db,runners){
   count=0;
   for(runnerid in runners){
      //for(var i=0;i<raceDocument.runners.length;i++){
@@ -376,8 +392,10 @@ function processRunners(runners){
           var index=raceurl.lastIndexOf('/');
           var raceid=raceurl.substring(index+1,raceurl.length);
           logger.info("Check horse: " + runnerid + " " + raceid);
-          db.perfstocheck.insert({runnerid:runnerid,raceid:raceid,raceurl:raceurl},function(err){
-
+          db.collection("perfstocheck").insert({runnerid:runnerid,raceid:raceid,raceurl:raceurl},function(err){
+            if(err){
+              logger.error("error: " + err);
+            }
             count--;
             if(count==0){
               process.exit()

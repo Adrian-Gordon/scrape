@@ -38,8 +38,9 @@ nconf.defaults(
 var moment=require('moment');
 
 var collections=["races","horses","cards","perfstocheck"];
-var databaseUrl=nconf.get("databaseurl");
-var db = require("mongojs").connect(databaseUrl, collections);
+var databaseUrl="mongodb://" + nconf.get("databaseurl");
+var MongoClient=require('mongodb').MongoClient;
+//var db = require("mongojs").connect(databaseUrl, collections);
 
 
 
@@ -112,10 +113,15 @@ var port=nconf.get("port");
 var request = require('request');
 var srequest=require('sync-request');
 
+MongoClient.connect(databaseUrl,function(err,db){
+    if(err) throw(err);
+    processOnePerformance(db);
+});
 
-function processOnePerformance(){
 
-  db.perfstocheck.findOne({},function(err,perf){
+function processOnePerformance(db){
+
+  db.collection("perfstocheck").findOne({},function(err,perf){
     if(perf){
       var id=perf._id;
       var horseid=perf.runnerid;
@@ -134,15 +140,16 @@ function processOnePerformance(){
 
       //now go check the performance
       var fn = function(hid,rid,rurl,pid){
-          db.horses.findOne({_id:horseid},function(err,horse){
+          db.collection("horses").findOne({_id:horseid},function(err,horse){
             if(!horse){
               logger.info("horse not there: " + hid);
               var url;
-              if(typeof rid !== 'undefined'){
-                url="http://" + nconf.get("host") + ":" + nconf.get("port") + "/getraceresult?raceid=" + rid + "&adddata=true" + replaceS;
+              if(typeof rurl !== 'undefined'){
+                
+                 url="http://" + nconf.get("host") + ":" + nconf.get("port") + "/getraceresult?resulturl=" + rurl + "&adddata=true" + replaceS;
               }
-              else if(typeof rurl != 'undefined'){
-                url="http://" + nconf.get("host") + ":" + nconf.get("port") + "/getraceresult?resulturl=" + rurl + "&adddata=true" + replaceS;
+              else if(typeof rid != 'undefined'){
+                url="http://" + nconf.get("host") + ":" + nconf.get("port") + "/getraceresult?raceid=" + rid + "&adddata=true" + replaceS;
               }
               
               request(url, function(err,resp,body){
@@ -160,9 +167,9 @@ function processOnePerformance(){
                   }
                   
                 }
-                db.perfstocheck.remove({_id:id},function(err){
+                db.collection("perfstocheck").remove({_id:id},function(err){
 
-                    processOnePerformance();//get the next one
+                    processOnePerformance(db);//get the next one
                 })
 
               });
@@ -177,11 +184,12 @@ function processOnePerformance(){
               if((typeof thisPerf=='undefined')||doReplace){
                 logger.info("horse perf not there: " + hid + " " + rid);
                 var url;
-              if(typeof rid !== 'undefined'){
-                url="http://" + nconf.get("host") + ":" + nconf.get("port") + "/getraceresult?raceid=" + rid + "&adddata=true";
+              if(typeof rurl !== 'undefined'){
+                 url="http://" + nconf.get("host") + ":" + nconf.get("port") + "/getraceresult?resulturl=" + rurl + "&adddata=true";
               }
-              if(typeof rurl != 'undefined'){
-                url="http://" + nconf.get("host") + ":" + nconf.get("port") + "/getraceresult?resulturl=" + rurl + "&adddata=true";
+              else if(typeof rid != 'undefined'){
+               
+                url="http://" + nconf.get("host") + ":" + nconf.get("port") + "/getraceresult?raceid=" + rid + "&adddata=true";
               }
               logger.info("url: " + url);
                 request(url, function(err,resp,body){
@@ -200,18 +208,18 @@ function processOnePerformance(){
                     }
                     
                   }
-                  db.perfstocheck.remove({_id:id},function(err){
+                  db.collection("perfstocheck").remove({_id:id},function(err){
 
-                      processOnePerformance();//get the next one
+                      processOnePerformance(db);//get the next one
                   })
 
                 });
               }
               else{
                 logger.info("performance already there");
-                 db.perfstocheck.remove({_id:id},function(err){
+                 db.collection("perfstocheck").remove({_id:id},function(err){
 
-                    processOnePerformance();//get the next one
+                    processOnePerformance(db);//get the next one
                 })
               }
 
@@ -236,7 +244,7 @@ function processOnePerformance(){
 }
 
 
-processOnePerformance();
+//processOnePerformance();
 
 /*
 var perfs=db.perfstocheck.find({});

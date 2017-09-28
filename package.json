@@ -10,7 +10,7 @@
     "gaussian": "^1.1.0",
     "jade": "^1.9.1",
     "moment": "~2.10.6",
-    "mongodb": "~1.4.2",
+    "mongodb": "~2.2",
     "mongojs": "^0.12.1",
     "nconf": "^0.7.1",
     "pegjs": "^0.8.0",

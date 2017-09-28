@@ -538,6 +538,7 @@ var lengthsPerSecond={
 		"AW":{
 			 "LINGFIELD (AW)":6,
 			 "KEMPTON (AW)":6,
+       "NEWCASTLE (AW)":6,
 			 "WOLVERHAMPTON (AW)": 6,
 			 "SOUTHWELL (AW)" : 5,
 			 "CHELMSFORD (AW)":6,
@@ -1464,7 +1465,7 @@ function getDateCards(req,res){
 
   //console.log("DATE: " + date);
 
-	var url=nconf.get('rprooturl')+ "/racecards/?r_date=" + date;
+	var url=nconf.get('rprooturl')+ "/racecards/" + date;
   logger.info("url: " + url);
 	var resp=srequest('GET',url);
   //logger.info(resp.getBody());
@@ -1539,6 +1540,7 @@ function betBatch(req,res){
       res.json({status: 'ERROR', message:JSON.stringify(err)});
       return;
     }
+    //logger.info(JSON.stringify(races));
     var i =0;
     var count=races.length;
     for(race in races){
@@ -1887,11 +1889,12 @@ var parseHorseRacesFromUrl = function( body) {
   //  logger.error(error);
   //}
   //else {
-    //console.log("body: " + body);
+    console.log("body: " + body);
     $ = cheerio.load(body);
 
     $(".ui-table__cell a").each(function(i,elem){
         var href=$(elem).attr('href');
+        console.log("href: " + href);
         if(href.indexOf('/results/')!=-1){
           if ($(elem).attr("data-test-selector")=="item-table-date"){
             //console.log("href: " + href);
@@ -1901,6 +1904,58 @@ var parseHorseRacesFromUrl = function( body) {
         }
         
     });
+
+    return(racesArray);
+    
+    
+};
+
+var parseHorseRacesFromUrl_v2 = function( body) {
+  var racesArray=[];
+  //logger.info("Do Parse horse races" )
+  //if (error || response.statusCode != 200) {
+  //  logger.error(error);
+  //}
+  //else {
+    //console.log("body: " + body);
+    try{
+      var parsed=JSON.parse(body);
+      //console.log(JSON.stringify(parsed));
+      var form = parsed.form;
+      for(raceid in form){
+        var race=form[raceid];
+       // console.log("RACE: " + JSON.stringify(race));
+        var raceid=race.raceInstanceUid;
+        var raceDateTime=race.raceDatetime;
+        var index=raceDateTime.indexOf('T');
+        raceDate=raceDateTime.substring(0,index);
+        var courseUid=race.courseUid;
+        var courseName=race.courseName;
+        courseName=courseName.replace(' (A.W)','-aw').toLowerCase().replace(" (july)","-july");
+        //console.log(raceid + " " + raceDate + " " + courseUid + " " + courseName);
+        var url="/results/" + courseUid + "/" + courseName + "/" + raceDate + "/" + raceid;
+        racesArray.push(url);
+      }
+
+    }catch(exception){
+      logger.error(JSON.stringify(exception));
+    }
+    
+   /* $ = cheerio.load(body);
+
+    $(".ui-table__cell a").each(function(i,elem){
+        var href=$(elem).attr('href');
+        console.log("href: " + href);
+        if(href.indexOf('/results/')!=-1){
+          if ($(elem).attr("data-test-selector")=="item-table-date"){
+            //console.log("href: " + href);
+            racesArray.push(href);
+          }
+          
+        }
+        
+    });
+  */
 
     return(racesArray);
     
@@ -3009,14 +3064,21 @@ function addRaceResultData(raceid,result,resulturl,res){
    
    //logger.info(JSON.stringify(raceDocument));
   //insert the race document, if it is not already there
-  db.races.findOne({_id:raceid},function(err,race){
-    if(race){
-      logger.info("Race alrady there: " +race._id);
-    }
-    else{
-      insertRaceDocument(raceDocument);
-    }
-  });
+  var databaseUrl="mongodb://" + nconf.get("databaseurl");
+  var MongoClient=require('mongodb').MongoClient;
+  MongoClient.connect(databaseUrl,function(err,db){
+    if(err) throw(err);
+    db.collection("races").findOne({_id:raceid},function(err,race){
+      if(race){
+        logger.info("Race alrady there: " +race._id);
+      }
+      else{
+        insertRaceDocument(raceDocument);
+      }
+    });
+    
+  
+  
    //insertRaceDocument(raceDocument);
    for(var horseid in result.horses ){
            // logger.info("horseid: " + horseid);
@@ -3030,7 +3092,7 @@ function addRaceResultData(raceid,result,resulturl,res){
               //  logger.info("859709 race: " + JSON.stringify(race))
              // }
                 asyncCalls++;
-                db.horses.findOne({_id:horseid},function(err,horse){
+                db.collection("horses").findOne({_id:horseid},function(err,horse){
                   asyncCalls--
                   if(err){
                     logger.error(JSON.stringify(err));
@@ -3060,13 +3122,13 @@ function addRaceResultData(raceid,result,resulturl,res){
                       }
                       //logger.info("horsedoc: " + JSON.stringify(horseDoc));
                       asyncCalls++;
-                      db.horses.insert(horseDoc,function(err,horse){
+                      db.collection("horses").insert(horseDoc,function(err,horse){
                         asyncCalls--;
                         if(err){
                           logger.error(JSON.stringify(err));
                         }
                         else{
-                          logger.info("Inserted horse: " + horse._id);
+                          logger.info("Inserted horse: " + horseDoc._id);
                         }
                         if(asyncCalls==0){
                           res.json(result);
@@ -3091,7 +3153,7 @@ function addRaceResultData(raceid,result,resulturl,res){
 
                       }
                       asyncCalls++;
-                      db.horses.update({"_id": horse._id},{$set:{performances:performances}},function(err,count){
+                      db.collection("horses").update({"_id": horse._id},{$set:{performances:performances}},function(err,count){
                         asyncCalls--;
                         if(err){
                           logger.error(JSON.stringify(err));
@@ -3114,6 +3176,7 @@ function addRaceResultData(raceid,result,resulturl,res){
                   });
                 }(raceDocument,horseData,horseid);
               }
+        });
 
 
 
@@ -3123,8 +3186,11 @@ function addRaceResultData(raceid,result,resulturl,res){
 
 function insertRaceDocument(document){
   //logger.info("insert race: " + JSON.stringify(document));
- 
-      db.races.insert(document,function(err,race){
+  var MongoClient=require('mongodb').MongoClient;
+  var databaseUrl="mongodb://" + nconf.get("databaseurl");
+  MongoClient.connect(databaseUrl,function(err,db){
+    if(err) throw(err);
+    db.collection("races").insert(document,function(err,race){
        // asyncCalls--;
         if(err){
           //don't report key errors
@@ -3140,6 +3206,10 @@ function insertRaceDocument(document){
        }
        
      });
+    
+  });
+ 
+      
       
   }
 
@@ -3181,20 +3251,52 @@ function getHorseRacesFromId(horseid,req,res){
 
 function getHorseRacesFromUrl(horseurl,req,res){
 
-  var i1=horseurl.indexOf("/horse");
+ /* var i1=horseurl.indexOf("/horse");
   var i2=horseurl.lastIndexOf('/');
 
   var horseid=horseurl.substring(i1+6,i2);
   var horsename=horseurl.substring(i2+1,horseurl.length);
   
   var url=nconf.get('rprooturl')+ "/profile/horse/tabs/" + horseid + "/" + horsename + "/form/horse/0/0/1/desktop";
+*/
+  console.log("horse url: " + nconf.get('rprooturl')+horseurl);
 
-  //console.log("horse url: " + url);
-
-  var resp=srequest("GET",url);
+ // var resp=srequest("GET",nconf.get('rprooturl')+horseurl);
   //console.log(resp.getBody().toString());
-  var racesData=parseHorseRacesFromUrl(resp.getBody().toString());
-  res.json(racesData);
+ // var racesData=parseHorseRacesFromUrl(resp.getBody().toString());
+ // res.json(racesData);
+
+  var req = require('request');
+
+  var headers = {
+            'User-Agent': 'javascript'
+  };
+
+  var options = {
+      url: nconf.get('rprooturl')+horseurl,
+      headers:headers
+
+  };
+
+
+  req(options, function(error,resp,body){
+       //console.log("response: " + response.statusCode);
+      // console.log(JSON.stringify(options));
+      if (!error && resp.statusCode == 200) {
+          //console.log(body.toString());
+          var racesData=parseHorseRacesFromUrl_v2(body);
+          //console.log(JSON.stringify(racesData));
+          res.json(racesData);
+      }
+      else{
+        logger.error(" response: " + resp.statusCode);
+        if(error){
+          logger.error(JSON.stringify(error));
+
+        }
+      }
+  });
+
   
  
 }
@@ -3288,7 +3390,7 @@ function getCardDataFromRaceid(req,res,raceid){
 function getCardDataFromRaceUrl(req,res,raceurl){
 	//var raceid=req.query.raceid;
 	var url=nconf.get('rprooturl') + raceurl;
-	//console.log(url);
+	console.log("getCardDataFromRaceUrl:"  + url);
 
 	var resp=srequest("GET",url);
 	//console.log(resp.getBody().toString());
@@ -3299,6 +3401,8 @@ function getCardDataFromRaceUrl(req,res,raceurl){
     var hurl=horse.url;
     index++
     //logger.info("Get races for " + horseid + " from " + hurl);
+
+    hurl=hurl.replace("profile/","profile/tab/") + "/form";
      horseRacesUrl="http://localhost:" + server.address().port + "/gethorseraces?horseurl=" + hurl;
 
      var r=function(hid){
