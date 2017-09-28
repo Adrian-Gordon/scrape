@@ -1,7 +1,8 @@
 /*This app gets assembles the data for a racecard in a form suitable for prediction - card data and past performance data*/
  gaussian=require('gaussian');
 //nconf is used globally
-nconf=require('nconf');
+if(typeof nconf == 'undefined')
+    nconf=require('nconf');
 
 var execSync=require('child_process').execSync
 
@@ -121,18 +122,25 @@ var moment=require('moment');
 
 var host=nconf.get("host");
 var port=nconf.get("port");
-
+var databaseUrl="mongodb://" + nconf.get("databaseurl");
+var MongoClient=require('mongodb').MongoClient;
 
 
 
 var request = require('request');
 var srequest=require('sync-request');
 
+MongoClient.connect(databaseUrl,function(err,db){
+    if(err) throw(err);
+    getCardPredictionData(db,nconf.get("raceid").toString(),predict);
+    
+});
+
 //logger.info("raceid: " + nconf.get("raceid").toString() + (typeof nconf.get("raceid")));
-getCardPredictionData(nconf.get("raceid").toString(),predict);
 
 
-function getCardPredictionData(raceid,callback){
+
+function getCardPredictionData(db,raceid,callback){
   var cardPredictObject={
 
     horses:{
@@ -140,7 +148,7 @@ function getCardPredictionData(raceid,callback){
     }
   }
 
-  db.cards.findOne({rpraceid:raceid},function(err,card){
+  db.collection("cards").findOne({rpraceid:raceid},function(err,card){
     if(err){
       logger.error(JSON.stringify(err));
     }
@@ -168,7 +176,7 @@ function getCardPredictionData(raceid,callback){
         //logger.info(runnerid);
         var f=function(ro,rid,cr){
           //logger.info("cr: " + JSON.stringify(cr));
-            db.horses.findOne({_id:runnerid},function(err,horse){
+            db.collection("horses").findOne({_id:runnerid},function(err,horse){
               if(err){
                 logger.info(JSON.stringify(err));
                 count--;
@@ -254,7 +262,7 @@ function getCardPredictionData(raceid,callback){
                     }
                     cardPredictObject.horses[rid]=ro;
                     //logger.info("COUNT: " + count);
-                    if(count==0)callback(cardPredictObject);
+                    if(count==0)callback(db,cardPredictObject);
 
 
               }
@@ -273,7 +281,7 @@ function getCardPredictionData(raceid,callback){
   })
 }
 
-function predict(cdObject){
+function predict(db,cdObject){
   var racetype=cdObject.racetype;
   //logger.info("cdObject: "  + JSON.stringify(cdObject));
   //logger.info('call predict');
@@ -292,7 +300,7 @@ function predict(cdObject){
 
   var referenceHorses=[];
 
-  db.horses.find({reference:true},function(err,referenceHorses){
+  db.collection("horses").find({reference:true},function(err,referenceHorses){
      /* for(horse in horses){
         var count=Object.keys(horses[horse].performances).length;
        // logger.info("COUNT: " + count);
@@ -385,12 +393,12 @@ function predict(cdObject){
         }
         //logger.info(JSON.stringify(cdObject));
         //doMonteCarlo(cdObject.horses);
-        outputToMonitorObject(cdObject);
+        outputToMonitorObject(db,cdObject);
     })
 }
 
 
-function outputToMonitorObject(cdObject){
+function outputToMonitorObject(db,cdObject){
   var obj={
     raceid:cdObject.raceid,
     course:cdObject.course,
@@ -415,7 +423,7 @@ function outputToMonitorObject(cdObject){
 
   }
   logger.info(JSON.stringify(obj));
-  db.tomonitor.insert(obj);
+  db.collection("tomonitor").insert(obj);
   process.exit();
 
 }
