@@ -1604,19 +1604,31 @@ function betBatch(req,res){
 
 //sudo node /home/ubuntu/GP/data/scrape-develop/downloadcard --conf scrapeconfig.json --raceid  643844
 function getGaussians(req,res){
-  var sendString=""
+  console.log("GET GAUSSIANS");
+  var databaseUrl="mongodb://" + nconf.get("databaseurl");
+  var MongoClient=require('mongodb').MongoClient;
+  var sendString="";
 
-  db.cards.find({},function(err,cards){
-    for(var i=0;i<cards.length;i++){
-      var card=cards[i];
-      var meeting=card.meeting;
-      var raceid=card.rpraceid;
-      if((meeting.indexOf('(GER')== -1)&&(meeting.indexOf('(FR')== -1)&&(meeting.indexOf('(USA')== -1)&&(meeting.indexOf('(AUS')== -1)&&(meeting.indexOf('(IT')== -1)&&(meeting.indexOf('(ITA')== -1)&&(meeting.indexOf('(SA')== -1)&&(meeting.indexOf('(RSA')== -1))
-        sendString+="sudo node " + nconf.get('scrapedir') +"getcardpredictiondata --conf " + nconf.get('datadir') + "scrapeconfig.json --raceid " +  raceid + " >> " + nconf.get('datadir') + "gaussiansout.txt 2>&1\n";
-    }
-    res.send(sendString);
+  MongoClient.connect(databaseUrl,function(err,db){
+    if(err) throw(err);
+    
+  
 
-  })
+    db.collection("cards").find({}).toArray(function(err,cards){
+      //console.log("The cards");
+      //console.log(JSON.stringify(cards));
+      for(var i=0;i<cards.length;i++){
+        var card=cards[i];
+        //console.log(JSON.stringify(card));
+        var meeting=card.meeting;
+        var raceid=card.rpraceid;
+        if((meeting.indexOf('(GER')== -1)&&(meeting.indexOf('(FR')== -1)&&(meeting.indexOf('(USA')== -1)&&(meeting.indexOf('(AUS')== -1)&&(meeting.indexOf('(IT')== -1)&&(meeting.indexOf('(ITA')== -1)&&(meeting.indexOf('(SA')== -1)&&(meeting.indexOf('(RSA')== -1))
+          sendString+="sudo node " + nconf.get('scrapedir') +"getcardpredictiondata --conf " + nconf.get('datadir') + "scrapeconfig.json --raceid " +  raceid + " >> " + nconf.get('datadir') + "gaussiansout.txt 2>&1\n";
+      }
+      res.send(sendString);
+
+    })
+  });
 }
 
 function getDateResults(req,res){
