@@ -300,7 +300,7 @@ function predict(db,cdObject){
 
   var referenceHorses=[];
 
-  db.collection("horses").find({reference:true},function(err,referenceHorses){
+  db.collection("horses").find({reference:true}).toArray(function(err,referenceHorses){
      /* for(horse in horses){
         var count=Object.keys(horses[horse].performances).length;
        // logger.info("COUNT: " + count);
@@ -423,8 +423,11 @@ function outputToMonitorObject(db,cdObject){
 
   }
   logger.info(JSON.stringify(obj));
-  db.collection("tomonitor").insert(obj);
-  process.exit();
+  db.collection("tomonitor").insert(obj,function(err,res){
+    process.exit();
+
+  });
+  
 
 }
 
