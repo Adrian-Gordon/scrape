@@ -728,6 +728,9 @@ app.get('/getracereport',getRaceReport);
 
 app.get('/getgaussians',getGaussians);
 
+//optionally?code=FLAT|JUMPS
+app.get('/getbetapredictions',getBetaPredictions);
+
 app.get('/betbatch',betBatch);
 
 app.get('/resultsbatch',resultsBatch);
@@ -1505,17 +1508,23 @@ function getDateCards(req,res){
 }
 
 function resultsBatch(req,res){
-  db.bets.find({result:{$exists:false}},function(err,bets){
-    var sendString="";
-    for(var i=0;i<bets.length;i++){
-      var bet=bets[i];
-      var marketid=bet.marketid;
-      sendString+="sudo node " + nconf.get("scrapedir") + "bfmonitor --conf " + nconf.get('datadir')+ "betconfig.json --marketid=" + marketid + "\n";
+  var MongoClient=require('mongodb').MongoClient;
+
+  MongoClient.connect("mongodb://" + databaseUrl,function(err,db){
+   // console.log("connected");
+    if(err) throw(err);
+    db.collection("bets").find({result:{$exists:false}}).toArray(function(err,bets){
+      var sendString="";
+      for(var i=0;i<bets.length;i++){
+        var bet=bets[i];
+        var marketid=bet.marketid;
+        sendString+="sudo node " + nconf.get("scrapedir") + "bfmonitor --conf " + nconf.get('datadir')+ "betconfig.json --marketid=" + marketid + "\n";
 
 
-    }
-    res.send(sendString);
+      }
+      res.send(sendString);
 
+    });
   });
 
 }
@@ -1535,12 +1544,19 @@ function betBatch(req,res){
   var dateStr=dateMoment.toISOString();
  // logger.info(dateStr);
 
-  db.tomonitor.find({offtime:{"$gte":new Date(dateStr)}}).sort({raceid:1},function(err,races){
+ var MongoClient=require('mongodb').MongoClient;
+
+  MongoClient.connect("mongodb://" + databaseUrl,function(err,db){
+   // console.log("connected");
+    if(err) throw(err);
+    db.collection("tomonitor").find({offtime:{"$gte":new Date(dateStr)}}).toArray(function(err,races){
+      //console.log("found");
     if(err){
       res.json({status: 'ERROR', message:JSON.stringify(err)});
       return;
     }
     //logger.info(JSON.stringify(races));
+    //console.log(JSON.stringify(races));
     var i =0;
     var count=races.length;
     for(race in races){
@@ -1550,7 +1566,7 @@ function betBatch(req,res){
 
       var fn=function(ro,index){
 
-        db.cards.findOne({rpraceid:raceid},function(err,card){
+        db.collection("cards").findOne({rpraceid:raceid},function(err,card){
           var cardHours=card.offtime.hours;
           var cardMinutes=card.offtime.minutes;
 
@@ -1578,7 +1594,7 @@ function betBatch(req,res){
          }
 
 
-          sendString+= "echo \"sudo node " + nconf.get('scrapedir') +"bfmonitor --conf " +nconf.get('datadir')+ "betconfig.json --raceid  " + ro.raceid + " > " + nconf.get('datadir') + "bfbatchout" + index + ".txt \" > " + nconf.get('datadir') +"bfbatch" +index +".sh\n";
+          sendString+= "echo \"sudo node " + nconf.get('scrapedir') +"betabfmonitor --conf " +nconf.get('datadir')+ "betconfig.json --raceid  " + ro.raceid + " > " + nconf.get('datadir') + "bfbatchout" + index + ".txt \" > " + nconf.get('datadir') +"bfbatch" +index +".sh\n";
           sendString+="sudo chmod +x " + nconf.get('datadir') +"bfbatch" + index + ".sh\n";
           sendString+="at -f " + nconf.get('datadir') + "bfbatch" + index + ".sh " + cardHours + cardMinutes + "\n";
           count--;
@@ -1598,11 +1614,15 @@ function betBatch(req,res){
     //res.send(sendString);
   })
 
+  });
+
+  
+
  // 
 
 }
 
-//sudo node /home/ubuntu/GP/data/scrape-develop/downloadcard --conf scrapeconfig.json --raceid  643844
+
 function getGaussians(req,res){
   console.log("GET GAUSSIANS");
   var databaseUrl="mongodb://" + nconf.get("databaseurl");
@@ -1624,6 +1644,44 @@ function getGaussians(req,res){
         var raceid=card.rpraceid;
         if((meeting.indexOf('(GER')== -1)&&(meeting.indexOf('(FR')== -1)&&(meeting.indexOf('(USA')== -1)&&(meeting.indexOf('(AUS')== -1)&&(meeting.indexOf('(IT')== -1)&&(meeting.indexOf('(ITA')== -1)&&(meeting.indexOf('(SA')== -1)&&(meeting.indexOf('(RSA')== -1))
           sendString+="sudo node " + nconf.get('scrapedir') +"getcardpredictiondata --conf " + nconf.get('datadir') + "scrapeconfig.json --raceid " +  raceid + " >> " + nconf.get('datadir') + "gaussiansout.txt 2>&1\n";
+      }
+      res.send(sendString);
+
+    })
+  });
+}
+
+function getBetaPredictions(req,res){
+  //console.log("GET BETA PREDICTIONS");
+  var databaseUrl="mongodb://" + nconf.get("databaseurl");
+  var MongoClient=require('mongodb').MongoClient;
+  var sendString="";
+  var code=req.query.code;
+  var dbquery={};
+
+  if(code == 'FLAT'){
+    dbquery.racetype='FLAT'
+
+  }
+  else if(code == 'JUMPS'){
+    dbquery.$or=[{racetype:'HURDLE'},{racetype:'CHASE'}];
+  }
+
+  MongoClient.connect(databaseUrl,function(err,db){
+    if(err) throw(err);
+    
+  
+
+    db.collection("cards").find(dbquery).toArray(function(err,cards){
+      //console.log("The cards");
+      //console.log(JSON.stringify(cards));
+      for(var i=0;i<cards.length;i++){
+        var card=cards[i];
+        //console.log(JSON.stringify(card));
+        var meeting=card.meeting;
+        var raceid=card.rpraceid;
+        if((meeting.indexOf('(GER')== -1)&&(meeting.indexOf('(FR')== -1)&&(meeting.indexOf('(USA')== -1)&&(meeting.indexOf('(AUS')== -1)&&(meeting.indexOf('(IT')== -1)&&(meeting.indexOf('(ITA')== -1)&&(meeting.indexOf('(SA')== -1)&&(meeting.indexOf('(RSA')== -1))
+          sendString+="sudo node " + nconf.get('scrapedir') +"getBetaPredictionData --conf " + nconf.get('datadir') + "scrapeconfig.json --raceid " +  raceid + " >> " + nconf.get('datadir') + "betapredictionsout.txt 2>&1\n";
       }
       res.send(sendString);
 
