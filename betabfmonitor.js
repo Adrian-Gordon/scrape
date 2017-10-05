@@ -440,7 +440,7 @@ function getMarketResult(token,marketid){
               
          
 
-              db.collection("bets").findOne({marketid:marketid},function(err,bet){
+              db.collection("betabets").findOne({marketid:marketid},function(err,bet){
                 if(err){
                   logger.error(JSON.stringify(err));
                   process.exit();
@@ -473,7 +473,7 @@ function getMarketResult(token,marketid){
                  // logger.info("horses now: " + JSON.stringify(horses));
 
                  if(isResult){
-                  db.collection("bets").update({marketid:marketid},{$set:{horses:horses,result:true}},function(err){
+                  db.collection("betabets").update({marketid:marketid},{$set:{horses:horses,result:true}},function(err){
                     process.exit();
                   });
                  }
@@ -611,7 +611,7 @@ function getOdds(token,marketid,bfRunnersLookup,horses,venue,offtime,surface,rac
             MongoClient.connect("mongodb://" + databaseUrl,function(err,db){
                 if(err) throw(err);
                 
-               db.collection("bets").insert(betObject,function(err,bet){
+               db.collection("betabets").insert(betObject,function(err,bet){
                     bets--;
                     if(bets==0){
                       process.exit();
