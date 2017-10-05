@@ -1513,12 +1513,12 @@ function resultsBatch(req,res){
   MongoClient.connect("mongodb://" + databaseUrl,function(err,db){
    // console.log("connected");
     if(err) throw(err);
-    db.collection("bets").find({result:{$exists:false}}).toArray(function(err,bets){
+    db.collection("betabets").find({result:{$exists:false}}).toArray(function(err,bets){
       var sendString="";
       for(var i=0;i<bets.length;i++){
         var bet=bets[i];
         var marketid=bet.marketid;
-        sendString+="sudo node " + nconf.get("scrapedir") + "bfmonitor --conf " + nconf.get('datadir')+ "betconfig.json --marketid=" + marketid + "\n";
+        sendString+="sudo node " + nconf.get("scrapedir") + "betabfmonitor --conf " + nconf.get('datadir')+ "betconfig.json --marketid=" + marketid + "\n";
 
 
       }
