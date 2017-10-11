@@ -3359,10 +3359,13 @@ function getHorseRacesFromUrl(horseurl,req,res){
           res.json(racesData);
       }
       else{
-        logger.error(" response: " + resp.statusCode);
+        
         if(error){
           logger.error(JSON.stringify(error));
 
+        }
+        if(resp){
+          logger.error(" response: " + resp.statusCode);
         }
       }
   });
