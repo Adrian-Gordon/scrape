@@ -388,6 +388,10 @@ function getMarketIds(token,rpVenue,rpOfftime,horses,surface,racetype,raceid){
               bets++;
               getOdds(token,requiredPlaceMarketid,runnersHash,horses,rpVenue,rpOfftime,surface,racetype,raceid);
             }
+
+            if((typeof requiredWinMarketid == 'undefined')&&(typeof requiredPlaceMarketid == 'undefined')) {
+                process.exit();
+            }
            
 
             
