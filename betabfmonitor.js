@@ -451,6 +451,10 @@ function getMarketResult(token,marketid){
                   return;
                 }
                 if(bet){
+                  if(typeof body.result[0]=='undefined'){
+                    logger.error(marketid + ": empty result");
+                    process.exit();
+                  }
                   logger.info("bet found");
                   var isResult=false;
                   var horses=bet.horses;
