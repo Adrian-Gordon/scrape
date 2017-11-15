@@ -3066,33 +3066,41 @@ function getRaceResultByUrl(req,res){
   }
 
   var url=nconf.get('rprooturl') + resulturl;
+  try{
 
-  var resp=srequest("GET",url);
-  //logger.info("getRaceResult response: " + resp.statusCode);
-  if(resp.statusCode !== 200){
-    resp=srequest("GET",url); //try again
+       var resp=srequest("GET",url);
+      //logger.info("getRaceResult response: " + resp.statusCode);
       if(resp.statusCode !== 200){
-        resp=srequest("GET",url); //and again
+        resp=srequest("GET",url); //try again
+          if(resp.statusCode !== 200){
+            resp=srequest("GET",url); //and again
+          }
       }
-  }
 
-  if(resp.statusCode !== 200){
-    logger.error("bad response code: " + resp.statusCode + " from: " + url);
-    var obj={
-      status:"ERROR",
-      message:"bad response code: " + resp.statusCode + " from: " + url
+      if(resp.statusCode !== 200){
+        logger.error("bad response code: " + resp.statusCode + " from: " + url);
+        var obj={
+          status:"ERROR",
+          message:"bad response code: " + resp.statusCode + " from: " + url
+        }
+        res.json(obj);
+      }
+      else{
+        var racedata=parseResultPageBeta(url,resp.getBody().toString(),lpsF);
+        if(adddata=='true'){
+            addRaceResultData(raceid,racedata,resulturl,res);
+        }
+        else {
+          res.json(racedata);
+        }
+      }
+    }catch(exception){
+      var obj={
+          status:"ERROR",
+          message:JSON.stringify(exception)
+        }
+        res.json(obj);
     }
-    res.json(obj);
-  }
-  else{
-    var racedata=parseResultPageBeta(url,resp.getBody().toString(),lpsF);
-    if(adddata=='true'){
-        addRaceResultData(raceid,racedata,resulturl,res);
-    }
-    else {
-      res.json(racedata);
-    }
-  }
 
 
 }
