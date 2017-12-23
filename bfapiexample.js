@@ -1,7 +1,3 @@
-
-
-
-
 var https = require('https');
 
 // Start the app

@@ -1,9 +1,5 @@
-<<<<<<< HEAD
-
-=======
->>>>>>> develop
  var moment=require('moment');
- gaussian=require('gaussian');
+var jStat = require('jStat').jStat;
 var httpRequest = require('request');
 //nconf is used globally
 nconf=require('nconf');
@@ -41,14 +37,17 @@ nconf.defaults(
       "variables":['speed1','distance1','distance2','distancediff','weight1','weight2','weightdiff','going1','going2','goingdiff'],
        'functionSet':['+','-','*','/','^','if<='],
       //"rule":["-","-","-","^",-2.2635,8.0547,"*",4.9096,"/","+",-8.7345,"*","distance2","goingdiff","-","if<=","weightdiff",-8.7345,"*",4.9096,"if<=",7.3357,"distancediff",-2.2635,"if<=",-1.4868,"weight2",-2.2635,"-","if<=","weightdiff","^","if<=",-1.4868,"weight2",-2.2635,"*","if<=","-","if<=","weightdiff","speed1","weight2","distance1","*",4.9096,"distancediff","weight2","distance1",7.3357,"distancediff",8.0547,"going1",7.3357,"-","+","if<=","*","+","+","if<=","distance1","/","^","if<=",-1.4868,"-","if<=","+",-1.4868,"weight2","weightdiff","speed1","weight1","^","^","distance1",-2.2635,"^","*","-",-2.7546,"distance1","/",2.5947,8.0547,"*","distance1","goingdiff",-2.2635,"/",2.3792,-3.4093,"speed1","+",-3.1683,"+","/",2.8033,"goingdiff","distance2",4.9096,"weight2","-","if<=","distance1","-","distancediff","*",4.9096,"/","-","^","-","if<=","distance1","going1","distance2","weight2","if<=","^","*","+","distance1","distance1","*","if<=",-0.0999,-2.5417,"goingdiff","distancediff","*","going1",-8.7345,"/","if<=",-1.4868,"weight2",-2.2635,"*","if<=","*",4.9096,"distancediff",-0.0999,"distancediff","distance2",-2.4760,"distance2","*","if<=",-2.2635,"goingdiff","going1","distancediff","*",8.0547,-8.7345,"+","^",-2.7546,-0.7124,"*",-2.2635,"goingdiff","weight2","/","going2","goingdiff","-","+","+","if<=","distance1","-","-","^","if<=",-1.4868,8.0547,-2.2635,"^",-2.2635,8.0547,8.0547,"+","if<=",-5.2669,-6.6087,"going1",-2.6198,"going2","distance2",4.9096,"weight2","-","if<=","distance1",-1.9041,-2.5417,"if<=","^","*","+","goingdiff","distance1","*","if<=",-0.0999,-2.5417,"going1","distancediff","*","going1","distance1","/","going2","goingdiff","*","if<=","distance2","weight2","going1","distancediff","distance2","+","^",-7.9920,8.0547,"distance1","-","-","^",-2.2635,8.0547,"if<=","distance1","going1","speed1","/","*","distance2","goingdiff","-","weight2","*",4.9096,-2.4760,"*",4.9096,"distancediff","if<=","^","*","+",-0.7124,"/","*","distance2","goingdiff","-","if<=","weightdiff","speed1","*","distance1","goingdiff",7.3357,"*","distancediff",-2.4760,"*","if<=",-0.0999,-2.5417,"going1","distancediff","*","going1","going1",-7.9920,"weight2","+","distancediff","*","distance2","goingdiff",-1.4868,-9.2846,"if<=","*",4.9096,"distancediff","distance1","distance1",-2.2635,"-","if<=","weightdiff","speed1","weight2",7.3357,"*",4.9096,-2.4760,-2.5417,"weight2","distance1",-9.2846,"distancediff","*",4.9096,"distance1","distancediff","distance2",-0.7124,"distance1","*",4.9096,-2.4760,"*","distancediff",-2.7546,"*",4.9096,"distancediff","*","distance1","goingdiff"],
-      "flatrule":["-","-","-","^",-2.2635,8.0547,"*",4.9096,"/","+",-8.7345,"*","distance2","goingdiff","-","if<=","weightdiff",-8.7345,"*",4.9096,"if<=",7.3357,"distancediff",-2.2635,"if<=",-1.4868,"weight2",-2.2635,"-","if<=","weightdiff","^","if<=",-1.4868,"weight2",-2.2635,"*","if<=","-","if<=","weightdiff","speed1","weight2","distance1","*",4.9096,"distancediff","weight2","distance1",7.3357,"distancediff",8.0547,"going1",7.3357,"-","+","if<=","*","+","+","if<=","distance1","/","^","if<=",-1.4868,"-","if<=","+",-1.4868,"weight2","weightdiff","speed1","weight1","^","^","distance1",-2.2635,"^","*","-",-2.7546,"distance1","/",2.5947,8.0547,"*","distance1","goingdiff",-2.2635,"/",2.3792,-3.4093,"speed1","+",-3.1683,"+","/",2.8033,"goingdiff","distance2",4.9096,"weight2","-","if<=","distance1","-","distancediff","*",4.9096,"/","-","^","-","if<=","distance1","going1","distance2","weight2","if<=","^","*","+","distance1","distance1","*","if<=",-0.0999,-2.5417,"goingdiff","distancediff","*","going1",-8.7345,"/","if<=",-1.4868,"weight2",-2.2635,"*","if<=","*",4.9096,"distancediff",-0.0999,"distancediff","distance2",-2.4760,"distance2","*","if<=",-2.2635,"goingdiff","going1","distancediff","*",8.0547,-8.7345,"+","^",-2.7546,-0.7124,"*",-2.2635,"goingdiff","weight2","/","going2","goingdiff","-","+","+","if<=","distance1","-","-","^","if<=",-1.4868,8.0547,-2.2635,"^",-2.2635,8.0547,8.0547,"+","if<=",-5.2669,-6.6087,"going1",-2.6198,"going2","distance2",4.9096,"weight2","-","if<=","distance1",-1.9041,-2.5417,"if<=","^","*","+","goingdiff","distance1","*","if<=",-0.0999,-2.5417,"going1","distancediff","*","going1","distance1","/","going2","goingdiff","*","if<=","distance2","weight2","going1","distancediff","distance2","+","^",-7.9920,8.0547,"distance1","-","-","^",-2.2635,8.0547,"if<=","distance1","going1","speed1","/","*","distance2","goingdiff","-","weight2","*",4.9096,-2.4760,"*",4.9096,"distancediff","if<=","^","*","+",-0.7124,"/","*","distance2","goingdiff","-","if<=","weightdiff","speed1","*","distance1","goingdiff",7.3357,"*","distancediff",-2.4760,"*","if<=",-0.0999,-2.5417,"going1","distancediff","*","going1","going1",-7.9920,"weight2","+","distancediff","*","distance2","goingdiff",-1.4868,-9.2846,"if<=","*",4.9096,"distancediff","distance1","distance1",-2.2635,"-","if<=","weightdiff","speed1","weight2",7.3357,"*",4.9096,-2.4760,-2.5417,"weight2","distance1",-9.2846,"distancediff","*",4.9096,"distance1","distancediff","distance2",-0.7124,"distance1","*",4.9096,-2.4760,"*","distancediff",-2.7546,"*",4.9096,"distancediff","*","distance1","goingdiff"],
+      "flatrule":["+","*","-","*","if<=","speed1","if<=","weight1",6.5858,"^",-6.4670,"/","*",-7.2541,-3.6690,"if<=","weight2",0.2758,"-","-",6.5858,"weight2","/","*","*","-",-4.1061,"weight2","distancediff","+",5.2645,5.8362,"if<=","speed1",0.2758,"weight1","weight1","weight1","+",5.2645,5.8362,"*","*",5.2645,"if<=","*","weight1","*",6.6996,"distancediff","if<=","/","*","*","*","*","-","-",-6.4670,"if<=","*","goingdiff",0.6722,"goingdiff","speed1",6.6996,"weight2","distancediff","+",5.2645,5.8362,"distancediff","+",5.2645,5.8362,"if<=","speed1",0.2758,"weight1","weight1","if<=","weight1",6.5858,"^",5.2645,"+","weight2","distancediff",6.6996,"*","*",5.2645,"if<=","*",0.6722,"goingdiff",0.2758,-3.6690,"weight1",0.6722,"weight1","weight2","weight1",0.6722,"weight1","-",-6.4670,"if<=","*","goingdiff","speed1",0.6722,"speed1","speed1","distance1","goingdiff","/","*","*","-","-",-6.4670,"*",-7.2541,-3.6690,"weight2","distancediff","+",5.2645,5.2645,"if<=","speed1",0.2758,"weight1","if<=","speed1","goingdiff",-3.6690,"weight1"],
       "jumpsrule":["+","+","if<=","-",6.3901,"distancediff","/","/",-3.7677,"/","weight2",-0.9028,"^","+",5.3409,"type1","if<=",-6.3143,5.8571,"speed1","if<=","if<=","+","goingdiff","weight1","if<=","-",6.3901,"distancediff","/","/",-3.7677,"/","weight2",-0.9028,"^","+",5.3409,"type1","if<=",-6.3143,5.8571,"speed1","if<=","if<=","+","goingdiff","weight1","if<=",4.3861,"speed1","weightdiff",4.3859,"/",4.3861,"type2","*","if<=","+","goingdiff","weight1","if<=",4.3861,6.4425,"weightdiff",4.3859,"/",4.3861,"type2","*",-8.6235,"*","if<=","goingdiff","going2","goingdiff","-",6.3901,"/",-9.5462,0.1577,-9.6067,"distancediff",0.1577,"if<=","if<=","+","goingdiff","weight1","if<=",4.3861,6.4425,0.1577,4.3859,"/","distancediff","type2","*","*",-6.8748,"*",-9.6067,"going2",5.0496,"if<=","+",4.7778,-6.6693,"+",-8.6235,-0.6790,"+","weightdiff","going2","^","going2","*","distance1","distancediff","-","^",4.3861,-5.4509,"^",-4.4569,"distancediff","*","if<=",7.3979,"speed1",-2.9964,5.0496,-8.6235,5.8571,"*","*",-3.7677,"*",-8.6235,"*","if<=","goingdiff","going2","goingdiff","-","/","-","/","-","*","if<=",7.3979,"speed1",-2.9964,5.0496,-8.6235,"distancediff","^",-0.9028,-6.8748,-6.5566,"weight1","/",-9.5462,0.1577,-9.6067,"-","-",6.3901,-0.9028,-0.9028,"typediff","/",5.5662,"type2","*","distance1","distancediff",0.1577,"if<=","if<=","+","goingdiff","weight1","if<=",4.3861,6.4425,"weightdiff",4.3859,"/","^","goingdiff",7.4575,"type2","*","*",-6.8748,"if<=",4.3861,6.4425,"weightdiff",4.3859,"*","distance1","distancediff","if<=","+",4.7778,-6.6693,"+","-",6.3901,-0.9028,-0.6790,"+","weightdiff","going2","^","going2","*","distance1","distancediff","-","^",4.3861,-5.4509,"^",-4.4569,"distancediff","*","if<=",7.3979,"speed1",-2.9964,5.0496,-8.6235,5.8571,"+","+","if<=","-",6.3901,"distancediff","/","/",-3.7677,"/","weight2",-0.9028,"^","+",5.3409,"type1","if<=",-6.3143,5.8571,"speed1","if<=","if<=","+","goingdiff","weight1","if<=","-",6.3901,"distancediff","/","/",-3.7677,"/","weight2",-0.9028,"^","+",5.3409,"type1","if<=",-6.3143,5.8571,"speed1","if<=","if<=","+","goingdiff","weight1","if<=",4.3861,"speed1","weightdiff",4.3859,"/",4.3861,"type2","*","if<=","+","goingdiff","weight1","if<=",4.3861,6.4425,"weightdiff",4.3859,"/",4.3861,"type2","*",-8.6235,"*","if<=","goingdiff","going2","goingdiff",-8.6235,-9.6067,"distancediff",0.1577,"if<=","if<=","+","goingdiff","weight1","if<=",4.3861,6.4425,"weightdiff",4.3859,"/","distancediff","type2","*","*",-6.8748,"*",-9.6067,"going2","*","distance1","distancediff","if<=","+",4.7778,-6.6693,"+",-8.6235,"distancediff","+","weightdiff","going2","^","distancediff","*","distance1","distancediff","-","^",4.3861,-5.4509,"^",-4.4569,"distancediff","*","if<=",7.3979,"speed1",-2.9964,5.0496,-8.6235,5.8571,"*","*",-3.7677,"*",-8.6235,"*","if<=","goingdiff","going2","goingdiff","-","/","-","/","-","*","if<=",7.3979,"speed1",-2.9964,5.0496,-8.6235,"distancediff","^",-0.9028,-6.8748,-6.5566,"weight1","/",-9.5462,0.1577,-9.6067,"-","-",6.3901,-0.9028,-0.9028,"typediff","/",4.3861,"type2","*","distance1","distancediff",0.1577,"if<=","if<=","+","goingdiff","weight1","if<=",4.3861,6.4425,"weightdiff",4.3859,"/","^","goingdiff",7.4575,"type2","*","*",-6.8748,"if<=",4.3861,6.4425,"weightdiff",4.3859,"*","distance1","distancediff","if<=",4.3861,"speed1","weightdiff",4.3859,"-","^",4.3861,-5.4509,"^",-4.4569,"going2","*","if<=",7.3979,"speed1",-2.9964,5.0496,-8.6235,5.8571,"*","*",-3.7677,"*",-8.6235,"*","if<=","goingdiff","going2","goingdiff","-","/","-","/","-",5.5662,"distancediff","^",-0.9028,-6.8748,-6.5566,"^",4.3861,-5.4509,"/",-9.5462,0.1577,-9.5462,"-","-",6.3901,-0.9028,-0.9028,"typediff","-",5.5662,"distancediff",-9.6067,"typediff","-",5.5662,"distancediff",-9.6067],
-      "referencecount":5,//number of performances to be considered a 'reference' horse
       "distancepm": 10, //+- 10m
       "weightpm":0,    //+= 0lbs
-      "nperfsforgaussian":100,
-      "classpath":"/Users/adriangordon/Development/Gaussian/:/Users/adriangordon/Development/Gaussian/flanagan.jar:/Users/adriangordon/Development/Gaussian/json-20160212.jar",
-      "montecarlotrials":100000,
+       "minfofx": -123249.31077344337,
+      "maxfofx": 85296.35009281096,
+      "alpha": 161,
+      "beta": 25,
+      "loc":-2.5,
+      "scale":21.2,//9.869,
+       "montecarlotrials":100000,
       "apikey":"goes here",
       "testProbs":{
           "Tangramm":{"win":0.1},
@@ -148,7 +147,10 @@ nconf.defaults(
 
 var collections=["races","horses","cards","tomonitor","bets"];
 var databaseUrl=nconf.get("databaseurl");
-var db = require("mongojs").connect(databaseUrl, collections);
+//var db = require("mongojs").connect(databaseUrl, collections);
+var MongoClient= require('mongodb').MongoClient;
+
+
 
 
 //configure logging
@@ -204,6 +206,12 @@ function traceCaller(n) {
 
 //end logging config
 
+var minfofx=nconf.get('minfofx');
+var maxfofx=nconf.get('maxfofx');
+var loc=nconf.get("loc");
+var scale=nconf.get("scale");
+var alpha=nconf.get('alpha');
+var beta=nconf.get('beta');
 
 //returns a sessiontoken
 function bfLogin(raceid,marketid){
@@ -211,11 +219,7 @@ function bfLogin(raceid,marketid){
   logger.info("bfLogin: " + raceid + " marketid: " + marketid);
 
 	httpRequest({
-<<<<<<< HEAD
-            url: "https://identitysso.betfair.com/api/login",
-=======
             url: "https://identitysso.betfair.com/api/login?username=" + nconf.get('bfusername') +"&password=" + nconf.get('bfpw'),
->>>>>>> develop
             method: "POST",  
             headers: {
 			    'X-Application': nconf.get('apikey'),
@@ -247,10 +251,12 @@ function bfLogin(raceid,marketid){
 }
 
 function getTomonitor(token,raceid){
-  
-  if(typeof raceid !== 'undefined'){
-    db.tomonitor.findOne({'raceid':raceid},function(err,tomonitor){
-      if(err){
+  var MongoClient= require('mongodb').MongoClient;
+  MongoClient.connect("mongodb://" + databaseUrl,function(err,db){
+    if(err) throw(err);
+    if(typeof raceid !== 'undefined'){
+    db.collection("tomonitor").findOne({'raceid':raceid},function(err,tomonitor){
+          if(err){
         logger.error(JSON.stringify(err));
         return
       }
@@ -265,6 +271,9 @@ function getTomonitor(token,raceid){
   else{
     process.exit();
   }
+    
+  });
+  
 }
 
 var bets;
@@ -379,6 +388,10 @@ function getMarketIds(token,rpVenue,rpOfftime,horses,surface,racetype,raceid){
               bets++;
               getOdds(token,requiredPlaceMarketid,runnersHash,horses,rpVenue,rpOfftime,surface,racetype,raceid);
             }
+
+            if((typeof requiredWinMarketid == 'undefined')&&(typeof requiredPlaceMarketid == 'undefined')) {
+                process.exit();
+            }
            
 
             
@@ -423,59 +436,71 @@ function getMarketResult(token,marketid){
           logger.info(JSON.stringify(body));
 
           ///find the bet
+          var MongoClient= require('mongodb').MongoClient;
 
-          db.bets.findOne({marketid:marketid},function(err,bet){
-            if(err){
-              logger.error(JSON.stringify(err));
-              process.exit();
-              return;
-            }
-            if(bet){
-              logger.info("bet found");
-              var isResult=false;
-              var horses=bet.horses;
-              var resultRunners=body.result[0].runners
-              for(var i=0;i<resultRunners.length;i++){
-                var resultRunner=resultRunners[i];
-                var bfid=resultRunner.selectionId;
-                var resultStatus=resultRunner.status;
-                if(resultStatus =="WINNER" || resultStatus=="LOSER"){
-                  isResult=true;
+          MongoClient.connect("mongodb://" + databaseUrl,function(err,db){
+              if(err) throw(err);
+              
+              
+         
+
+              db.collection("betabets").findOne({marketid:marketid},function(err,bet){
+                if(err){
+                  logger.error(JSON.stringify(err));
+                  process.exit();
+                  return;
                 }
-                logger.info(bfid + " " + resultStatus);
-                //iterate through my horses
-                for(horse in horses){
-                  var horseObj=horses[horse];
-                  logger.info("horseObj: " + JSON.stringify(horseObj));
-                  if(horseObj.bfid){
-                    if(horseObj.bfid.toString()==bfid){
-                      horseObj.status=resultStatus
+                if(bet){
+                  if(typeof body.result[0]=='undefined'){
+                    logger.error(marketid + ": empty result");
+                    process.exit();
+                  }
+                  logger.info("bet found");
+                  var isResult=false;
+                  var horses=bet.horses;
+                  var resultRunners=body.result[0].runners
+                  for(var i=0;i<resultRunners.length;i++){
+                    var resultRunner=resultRunners[i];
+                    var bfid=resultRunner.selectionId;
+                    var resultStatus=resultRunner.status;
+                    if(resultStatus =="WINNER" || resultStatus=="LOSER"){
+                      isResult=true;
+                    }
+                    logger.info(bfid + " " + resultStatus);
+                    //iterate through my horses
+                    for(horse in horses){
+                      var horseObj=horses[horse];
+                      logger.info("horseObj: " + JSON.stringify(horseObj));
+                      if(horseObj.bfid){
+                        if(horseObj.bfid.toString()==bfid){
+                          horseObj.status=resultStatus
+                        }
+                      }
                     }
                   }
+                 // logger.info("horses now: " + JSON.stringify(horses));
+
+                 if(isResult){
+                  db.collection("betabets").update({marketid:marketid},{$set:{horses:horses,result:true}},function(err){
+                    process.exit();
+                  });
+                 }
+                 else{
+                  logger.error("couldn't process result for: " + marketid);
+                  process.exit();//couldn't process this result
+
+                 }
+                  
+
+
                 }
-              }
-             // logger.info("horses now: " + JSON.stringify(horses));
+                else{
+                  process.exit();
+                }
 
-             if(isResult){
-              db.bets.update({marketid:marketid},{$set:{horses:horses,result:true}},function(err){
-                process.exit();
+
               });
-             }
-             else{
-              logger.error("couldn't process result for: " + marketid);
-              process.exit();//couldn't process this result
-
-             }
-              
-
-
-            }
-            else{
-              process.exit();
-            }
-
-
-          });
+           });
           
 
         })
@@ -557,7 +582,7 @@ function getOdds(token,marketid,bfRunnersLookup,horses,venue,offtime,surface,rac
               marketType="PLACE";
          var betConditions=nconf.get('betconditions');
 
-         console.log("RACETYPE: " + racetype);
+        // console.log("RACETYPE: " + racetype);
          var layBetConditions=betConditions[racetype][marketType]["LAY"];
          var backBetConditions=betConditions[racetype][marketType]["BACK"];
 
@@ -589,14 +614,23 @@ function getOdds(token,marketid,bfRunnersLookup,horses,venue,offtime,surface,rac
             }
           }
           else{
-            db.bets.insert(betObject,function(err,bet){
-              bets--;
-              if(bets==0){
-                process.exit();
-              }
+            var MongoClient= require('mongodb').MongoClient;
 
-            });
-          }
+            MongoClient.connect("mongodb://" + databaseUrl,function(err,db){
+                if(err) throw(err);
+                
+               db.collection("betabets").insert(betObject,function(err,bet){
+                    bets--;
+                    if(bets==0){
+                      process.exit();
+                    }
+
+                  });
+                }); 
+
+            };
+
+           
 
         })
       
@@ -821,12 +855,8 @@ function doBetfairBet(token,marketid,horseid,bettype,stake, odds){
 }
 
 function doMonteCarlo(horses,nwinners){
-
-  //set up the gaussian distribution
-//logger.info("horses: " + JSON.stringify(horses));
-   for(horsename in horses){
+ for(horsename in horses){
         var horse=horses[horsename];
-        horse.gaussianDistribution=gaussian(horse.mean,horse.sigma * horse.sigma);
           horse.trialsResults={
             first:0,
             second:0,
@@ -837,34 +867,31 @@ function doMonteCarlo(horses,nwinners){
           }
     }
 
-  
   for(var trial=0;trial<nconf.get('montecarlotrials');trial++){
-      var samples=[];
-      for(horsename in horses){
-        var horse=horses[horsename];
-        if(horse.status === "ACTIVE"){
-          var dist=horse.gaussianDistribution;
-          var predictedSpeed=dist.ppf(Math.random());
-          var predictionObject={
-            horse:horse,
-            speed:predictedSpeed
-          }
-          samples.push(predictionObject);
+    var samples=[];
+    for(horsename in horses){
+
+      var horse=horses[horsename];
+      //console.log(horsename + " status: " + horse.status);
+      if(horse.status!=='REMOVED'){
+        var sample=jStat.beta.sample(alpha,beta);
+        var distribution=horse.distribution;
+        var predictedSpeed= loc + distribution.modeTranslate + (sample * distribution.scale) - (distribution.modeIncrement * distribution.binWidth);
+        var predictionObject={
+          horse:horse,
+          speed:predictedSpeed
         }
-        
+        samples.push(predictionObject);
 
-        
       }
-
-
-      samples.sort(function(a,b){
+    }
+    samples.sort(function(a,b){
         if(a.speed < b.speed)return(1);
         if(a.speed > b.speed)return(-1);
         return(0);
       });
-      //logger.info("samples: " + JSON.stringify(samples));
-
-      for(var i=0;i<samples.length;i++){
+   // console.log(JSON.stringify(samples));
+    for(var i=0;i<samples.length;i++){
         var sample=samples[i];
         if(i==0){
           sample.horse.trialsResults.first =sample.horse.trialsResults.first + 1;
@@ -886,13 +913,11 @@ function doMonteCarlo(horses,nwinners){
         }
       }
 
-
-
   }
   //calculate probabilities
-   for(horseid in horses){
-        var horse=horses[horseid];
-        if(horse.status == "ACTIVE"){
+   for(horsename in horses){
+        var horse=horses[horsename];
+        if(horse.status != "REMOVED"){
           if(nwinners==1){        //it's a win market
              horse.winProbability= horse.trialsResults.first /nconf.get('montecarlotrials');
              horse.winLayReturn=((1-horse.winProbability)/(1-(1/horse.bestLayWinPrice))) -1;
@@ -931,8 +956,6 @@ function doMonteCarlo(horses,nwinners){
     
        
     }
-    //logger.info(JSON.stringify(horses));
-
 }
 
 

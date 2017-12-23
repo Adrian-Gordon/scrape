@@ -95,7 +95,7 @@ function traceCaller(n) {
 //end logging config
 
 
-var collections=["races","horses","cards","tomonitor","bets","testbets"];
+var collections=["races","horses","cards","tomonitor","bets","testbets","spbets"];
 var databaseUrl=nconf.get("databaseurl");
 var mongojs=require("mongojs");
 var db = require("mongojs").connect(databaseUrl, collections);
@@ -343,6 +343,7 @@ var cardConditionsParserStr="start= (ws /expr)+\n"
 +"/ageORCondExpr\n"
 +"classExpr='(' 'CLASS' ws int:integer ')'   {return{conditiontype:'class', value:int}}\n"
 +"/'(' 'Grade' ws int:integer ')'   {return{conditiontype:'grade', value:int}}\n"
++"/'(' 'Class' ws int:integer ')'   {return{conditiontype:'class', value:int}}\n"
 +"ageORCondExpr='(' agecond:agecond ' ' ORCond:ORCond ')' {return[agecond,ORCond]}\n"
 +"condExpr='(' lower:integer '-' upper:integer ')'  {return{conditiontype:'conditions',upper:upper,lower:lower}}\n"
 +"/'(' lower:integer '-' upper:integer ',' ws age:agecond ')'  {return{conditiontype:'conditions',upper:upper,lower:lower,ageconditions:age}}\n"
@@ -366,7 +367,9 @@ var cardDistParserStr="start=de:distExpr ' Inner' {return de}\n"
 +"distExpr=miles:integer 'm' yards:integer 'y'  {return{miles:miles,yards:yards}}\n"
 +"/furlongs:integer 'f' yards:integer 'y'  {return{furlongs:furlongs,yards:yards}}\n"
 +"/miles:integer 'm' furlongs:integer 'f' yards:integer 'y'  {return{miles:miles,furlongs:furlongs,yards:yards}}\n"
++"/miles:integer 'm' furlongs:integer '\xBD' 'f'  {return{miles:miles,furlongs:(furlongs + 0.5)}}\n"
 +"/miles:integer 'm' furlongs:integer 'f'  {return{miles:miles,furlongs:furlongs}}\n"
++"/furlongs:integer '\xBD' 'f'  {return{furlongs:f(urlongs + 0.5)}}\n"
 +"/furlongs:integer 'f'  {return{furlongs:furlongs}}\n"
 +"/miles:integer 'm'  {return{miles:miles}}\n"
 +"integer 'integer'= digits:[0-9]+ { return parseInt(digits.join(''), 10); }\n"
@@ -415,8 +418,11 @@ var conditionsParserStr="start=(ws /expr)+\n"
 +"/int:integer 'yo' {return {lower:int,upper:int}}\n"
 +"/lower:integer '-' upper:integer {return{ageconditions:{upper:upper,lower:lower}}}"
 +"distParExpr='(' miles:integer 'm' yards:integer 'y' ')' {return{conditiontype:'distancep',miles:miles,yards:yards}}\n"
++"/'(' miles:integer 'm' yards:integer 'yds' ')' {return{conditiontype:'distancep',miles:miles,yards:yards}}\n"
 +"/'(' furlongs:integer 'f' yards:integer 'y' ')' {return{conditiontype:'distancep',furlongs:furlongs,yards:yards}}\n"
++"/'(' furlongs:integer 'f' yards:integer 'yds' ')' {return{conditiontype:'distancep',furlongs:furlongs,yards:yards}}\n"
 +"/'(' miles:integer 'm' furlongs:integer 'f' yards:integer 'y' ')' {return{conditiontype:'distancep',miles:miles,furlongs:furlongs,yards:yards}}\n"
++"/'(' miles:integer 'm' furlongs:integer 'f' yards:integer 'yds' ')' {return{conditiontype:'distancep',miles:miles,furlongs:furlongs,yards:yards}}\n"
 +"distExpr=miles:integer 'm' furlongs:'\xBD' 'f' {return{conditiontype:'distance',miles:miles,furlongs:furlongs}}\n"
 +"/miles:integer 'm' furlongs:integer '\xBD' 'f' {return{conditiontype:'distance',miles:miles,furlongs:furlongs + '\xBD'}}\n"
 +"/miles:integer 'm' furlongs:integer 'f' {return{conditiontype:'distance',miles:miles,furlongs:furlongs}}\n"
@@ -452,6 +458,7 @@ var conditionsParserStr="start=(ws /expr)+\n"
 +"/going:'Holding' anything {return{conditiontype:'going',going:'Soft'}}\n"
 +"/going:'Soft' anything {return{conditiontype:'going',going:going}}\n"
 +"/going:'Good To Soft' anything {return{conditiontype:'going',going:going}}\n"
++"/going:'Yielding To Soft' anything {return{conditiontype:'going',going:going}}\n"
 +"/going:'Good To Firm' anything {return{conditiontype:'going',going:going}}\n"
 +"/going:'Good To Yielding' anything {return{conditiontype:'going',going:going}}\n"
 +"/going:'Good' anything {return{conditiontype:'going',going:going}}\n"
@@ -468,21 +475,31 @@ var timeParserStr="start=(ws /timeexpr)+\n"
 +"anything=.* {return null}\n";
 
 //distance beaten, this is:
-var distParserStr="start=(integerspace/integerfraction/fraction/space/desc)\n"
+var distParserStr="start=(integerspace/integerfraction/integer/fraction/space/desc)\n"
 +"integer 'integer'= digits:[0-9]+ { return parseInt(digits.join(''), 10); }\n"
 +"integerspace=int:integer ' '{return int}\n"
 +"integerfraction= int:integer frac:fraction {return (int + frac)}\n"
 +"fraction='\xBE ' {return 0.75}\n"
++"/'\xBE' {return 0.75}\n"
 +"/'\xBD ' {return 0.5}\n"
++"/'\xBD' {return 0.5}\n"
 +"/'\xBC ' {return 0.25}\n"
++"/'\xBC' {return 0.25}\n"
 +"space= ' ' {return 0}\n"
 +"desc='nk ' {return 0.25}\n"
++"/'nk' {return 0.25}\n"
 +"/'snk ' {return 0.25}\n"
++"/'snk' {return 0.25}\n"
 +"/'hd ' {return 0.1}\n"
++"/'hd' {return 0.1}\n"
++"/'nse' {return 0.02}\n"
 +"/'nse ' {return 0.02}\n"
 +"/'shd ' {return 0.05}\n"
++"/'shd' {return 0.05}\n"
 +"/'dht ' {return 0.0}\n"
++"/'dht' {return 0.0}\n"
 +"/'dist ' {return 30.0}\n"
++"/'dist' {return 30.0}\n"
 
 var weightParseStr="start=sts:integer '-' lbs:integer anything {return ((sts * 14) + lbs)}\n"
 +"integer 'integer'= digits:[0-9]+ { return parseInt(digits.join(''), 10); }\n"
@@ -521,10 +538,12 @@ var lengthsPerSecond={
 		"AW":{
 			 "LINGFIELD (AW)":6,
 			 "KEMPTON (AW)":6,
+       "NEWCASTLE (AW)":6,
 			 "WOLVERHAMPTON (AW)": 6,
 			 "SOUTHWELL (AW)" : 5,
 			 "CHELMSFORD (AW)":6,
 			 "DUNDALK (AW)":6,
+       "DUNDALK (AW) (IRE)":6,
        "MEYDAN":6,
        "AL AIN":6
 
@@ -557,7 +576,7 @@ var lengthsPerSecond={
 
 /* USAGE: getLPS('FLAT','AW','LINGFIELD (AW)', 'Good',)*/
 function getLPS(raceType,surface,course,going,url){
-	logger.info("getLPS " + raceType + " " + surface + " " + course + " " + going);
+	//logger.info("getLPS " + raceType + " " + surface + " " + course + " " + going);
 	try{
 	var lps;
 	var typeObj=lengthsPerSecond[raceType];
@@ -671,6 +690,9 @@ app.get('/getdateresults',getDateResults);
 app.get('/getdatecards',getDateCards);
 
 /* USAGE: /getraceresult?raceid=627325 */
+/* /getraceresult?resulturl=/results/54/sandown/2017-02-04/666912*/
+/*optionally &adddata=true */
+/*optionally &replace=true*/
 app.get('/getraceresult',getRaceResult);
 
 /*USAGE: /gethorsedates?horseid=859709*/
@@ -683,6 +705,7 @@ app.get('/gethorseraces',getHorseRaces);
 app.get('/gethorsename',getHorseName);
 
 /*USAGE: /getcarddata?raceid=642388*/
+/*		/getcarddata?raceurl=/racecards/393/lingfield-aw/2017-02-24/668167*/
 app.get('/getcarddata',getCardData);
 
 /*USAGE: /deletecard?raceid=642388*/
@@ -705,13 +728,16 @@ app.get('/getracereport',getRaceReport);
 
 app.get('/getgaussians',getGaussians);
 
+//optionally?code=FLAT|JUMPS
+app.get('/getbetapredictions',getBetaPredictions);
+
 app.get('/betbatch',betBatch);
 
 app.get('/resultsbatch',resultsBatch);
 
 
 function betsReport(req,res){
-
+  var collectionS=req.query.collection;
   var marketType=req.query.market;//WIN or PLACE
   var betType=req.query.bettype;//BACK or LAY
   var code=req.query.code; //FLAT or JUMPS, or undefined
@@ -729,7 +755,11 @@ function betsReport(req,res){
   var layProportion=0.05; //default 5%  of bank per lay bet
   var backProportion=0.02;//default 2% of bank per back bet
   //build sort object
-
+  var collection=db.bets; //default collection to run the query against
+  if(typeof collectionS != 'undefined'){
+    if(collectionS == 'bets')collection=db.bets;
+    if(collectionS=='spbets')collection=db.spbets;
+  }
   
   if(typeof proportionS != 'undefined'){
     if(betType=="LAY"){
@@ -752,7 +782,8 @@ function betsReport(req,res){
   }
   //{ $or: [ { <expression1> }, { <expression2> }, ... , { <expressionN> } ] }
   logger.info("QueryObject: " + JSON.stringify(queryObject));
-  db.bets.find(queryObject).sort({offtime:1},function(err,bets){
+  
+  collection.find(queryObject).sort({offtime:1},function(err,bets){
   //db.testbets.find(queryObject,function(err,bets){
     if(err){
       logger.error(err);
@@ -1437,30 +1468,31 @@ function getDateCards(req,res){
 
   //console.log("DATE: " + date);
 
-	var url="http://www.racingpost.com/horses2/cards/home.sd?r_date=" + date;
+	var url=nconf.get('rprooturl')+ "/racecards/" + date;
   logger.info("url: " + url);
 	var resp=srequest('GET',url);
   //logger.info(resp.getBody());
 
 	$ = cheerio.load(resp.getBody());
 
-	$('.rTitle a').each(function(index, value){
+	$('.RC-meetingItem a').each(function(index, value){
 		var raceUrl=$(value).attr('href');
-		var index1=raceUrl.indexOf("_id=");
-		var index2=raceUrl.indexOf("r_date");
-		var raceid=raceUrl.substring(index1+4,index2-1);
-		result.push(raceid);
+    logger.info("raceUrl: " + raceUrl);
+		//var index1=raceUrl.indexOf("_id=");
+		//var index2=raceUrl.indexOf("r_date");
+		//var raceid=raceUrl.substring(index1+4,index2-1);
+		result.push(raceUrl);
 
 	});
 
   if(typeof outbatch !== 'undefined' && outbatch=='true'){
       var sendString="";
       for(var i=0;i<result.length;i++){
-        var rid=result[i];
+        var rurl=result[i];
        // sudo node /Users/adriangordon/Development/GP/data/scrape/downloadcard --raceid 643501 > dbatchout0.txt 2>&1 &
        //sudo chmod +x dbatch0.sh
       //at -f dbatch0.sh now +1 minute
-        sendString=sendString+ "echo \"sudo node " + nconf.get('scrapedir') +"downloadcard --conf " + nconf.get('datadir')+"scrapeconfig.json --raceid  " + rid + " > " + nconf.get('datadir') + "dbatchout" + i + ".txt 2>&1 &\" > " + nconf.get('datadir')+"dbatch" +i +".sh\n";
+        sendString=sendString+ "echo \"sudo node " + nconf.get('scrapedir') +"downloadcard --conf " + nconf.get('datadir')+"scrapeconfig.json --raceurl  " + rurl + " > " + nconf.get('datadir') + "dbatchout" + i + ".txt 2>&1 &\" > " + nconf.get('datadir')+"dbatch" +i +".sh\n";
         sendString=sendString+"sudo chmod +x " + nconf.get('datadir') + "dbatch" + i + ".sh\n";
         //sendString=sendString+"at -f dbatch" + i + ".sh now +" + ((i + 1) +(i * nconf.get("delay"))) +" minute\n";
         sendString=sendString+"at -f " + nconf.get('datadir') + "dbatch" + i + ".sh now +" + i * nconf.get("delay") +" minute\n";
@@ -1476,17 +1508,23 @@ function getDateCards(req,res){
 }
 
 function resultsBatch(req,res){
-  db.bets.find({result:{$exists:false}},function(err,bets){
-    var sendString="";
-    for(var i=0;i<bets.length;i++){
-      var bet=bets[i];
-      var marketid=bet.marketid;
-      sendString+="sudo node " + nconf.get("scrapedir") + "bfmonitor --marketid=" + marketid + "\n";
+  var MongoClient=require('mongodb').MongoClient;
+
+  MongoClient.connect("mongodb://" + databaseUrl,function(err,db){
+   // console.log("connected");
+    if(err) throw(err);
+    db.collection("betabets").find({result:{$exists:false}}).toArray(function(err,bets){
+      var sendString="";
+      for(var i=0;i<bets.length;i++){
+        var bet=bets[i];
+        var marketid=bet.marketid;
+        sendString+="sudo node " + nconf.get("scrapedir") + "betabfmonitor --conf " + nconf.get('datadir')+ "betconfig.json --marketid=" + marketid + "\n";
 
 
-    }
-    res.send(sendString);
+      }
+      res.send(sendString);
 
+    });
   });
 
 }
@@ -1506,11 +1544,19 @@ function betBatch(req,res){
   var dateStr=dateMoment.toISOString();
  // logger.info(dateStr);
 
-  db.tomonitor.find({offtime:{"$gte":new Date(dateStr)}}).sort({raceid:1},function(err,races){
+ var MongoClient=require('mongodb').MongoClient;
+
+  MongoClient.connect("mongodb://" + databaseUrl,function(err,db){
+   // console.log("connected");
+    if(err) throw(err);
+    db.collection("tomonitor").find({offtime:{"$gte":new Date(dateStr)}}).toArray(function(err,races){
+      //console.log("found");
     if(err){
       res.json({status: 'ERROR', message:JSON.stringify(err)});
       return;
     }
+    //logger.info(JSON.stringify(races));
+    //console.log(JSON.stringify(races));
     var i =0;
     var count=races.length;
     for(race in races){
@@ -1520,7 +1566,7 @@ function betBatch(req,res){
 
       var fn=function(ro,index){
 
-        db.cards.findOne({rpraceid:raceid},function(err,card){
+        db.collection("cards").findOne({rpraceid:raceid},function(err,card){
           var cardHours=card.offtime.hours;
           var cardMinutes=card.offtime.minutes;
 
@@ -1548,7 +1594,7 @@ function betBatch(req,res){
          }
 
 
-          sendString+= "echo \"sudo node " + nconf.get('scrapedir') +"bfmonitor --conf " +nconf.get('datadir')+ "betconfig.json --raceid  " + ro.raceid + " > " + nconf.get('datadir') + "bfbatchout" + index + ".txt \" > " + nconf.get('datadir') +"bfbatch" +index +".sh\n";
+          sendString+= "echo \"sudo node " + nconf.get('scrapedir') +"betabfmonitor --conf " +nconf.get('datadir')+ "betconfig.json --raceid  " + ro.raceid + " > " + nconf.get('datadir') + "bfbatchout" + index + ".txt \" > " + nconf.get('datadir') +"bfbatch" +index +".sh\n";
           sendString+="sudo chmod +x " + nconf.get('datadir') +"bfbatch" + index + ".sh\n";
           sendString+="at -f " + nconf.get('datadir') + "bfbatch" + index + ".sh " + cardHours + cardMinutes + "\n";
           count--;
@@ -1568,25 +1614,79 @@ function betBatch(req,res){
     //res.send(sendString);
   })
 
+  });
+
+  
+
  // 
 
 }
 
-//sudo node /home/ubuntu/GP/data/scrape-develop/downloadcard --conf scrapeconfig.json --raceid  643844
+
 function getGaussians(req,res){
-  var sendString=""
+  console.log("GET GAUSSIANS");
+  var databaseUrl="mongodb://" + nconf.get("databaseurl");
+  var MongoClient=require('mongodb').MongoClient;
+  var sendString="";
 
-  db.cards.find({},function(err,cards){
-    for(var i=0;i<cards.length;i++){
-      var card=cards[i];
-      var meeting=card.meeting;
-      var raceid=card.rpraceid;
-      if((meeting.indexOf('(GER')== -1)&&(meeting.indexOf('(FR')== -1)&&(meeting.indexOf('(USA')== -1)&&(meeting.indexOf('(AUS')== -1)&&(meeting.indexOf('(IT')== -1)&&(meeting.indexOf('(ITA')== -1)&&(meeting.indexOf('(SA')== -1)&&(meeting.indexOf('(RSA')== -1))
-        sendString+="sudo node " + nconf.get('scrapedir') +"getcardpredictiondata --conf " + nconf.get('datadir') + "scrapeconfig.json --raceid " +  raceid + " >> " + nconf.get('datadir') + "gaussiansout.txt 2>&1\n";
-    }
-    res.send(sendString);
+  MongoClient.connect(databaseUrl,function(err,db){
+    if(err) throw(err);
+    
+  
 
-  })
+    db.collection("cards").find({}).toArray(function(err,cards){
+      //console.log("The cards");
+      //console.log(JSON.stringify(cards));
+      for(var i=0;i<cards.length;i++){
+        var card=cards[i];
+        //console.log(JSON.stringify(card));
+        var meeting=card.meeting;
+        var raceid=card.rpraceid;
+        if((meeting.indexOf('(GER')== -1)&&(meeting.indexOf('(FR')== -1)&&(meeting.indexOf('(USA')== -1)&&(meeting.indexOf('(AUS')== -1)&&(meeting.indexOf('(IT')== -1)&&(meeting.indexOf('(ITA')== -1)&&(meeting.indexOf('(SA')== -1)&&(meeting.indexOf('(RSA')== -1))
+          sendString+="sudo node " + nconf.get('scrapedir') +"getcardpredictiondata --conf " + nconf.get('datadir') + "scrapeconfig.json --raceid " +  raceid + " >> " + nconf.get('datadir') + "gaussiansout.txt 2>&1\n";
+      }
+      res.send(sendString);
+
+    })
+  });
+}
+
+function getBetaPredictions(req,res){
+  //console.log("GET BETA PREDICTIONS");
+  var databaseUrl="mongodb://" + nconf.get("databaseurl");
+  var MongoClient=require('mongodb').MongoClient;
+  var sendString="";
+  var code=req.query.code;
+  var dbquery={};
+
+  if(code == 'FLAT'){
+    dbquery.racetype='FLAT'
+
+  }
+  else if(code == 'JUMPS'){
+    dbquery.$or=[{racetype:'HURDLE'},{racetype:'CHASE'}];
+  }
+
+  MongoClient.connect(databaseUrl,function(err,db){
+    if(err) throw(err);
+    
+  
+
+    db.collection("cards").find(dbquery).toArray(function(err,cards){
+      //console.log("The cards");
+      //console.log(JSON.stringify(cards));
+      for(var i=0;i<cards.length;i++){
+        var card=cards[i];
+        //console.log(JSON.stringify(card));
+        var meeting=card.meeting;
+        var raceid=card.rpraceid;
+        if((meeting.indexOf('(GER')== -1)&&(meeting.indexOf('(FR')== -1)&&(meeting.indexOf('(USA')== -1)&&(meeting.indexOf('(AUS')== -1)&&(meeting.indexOf('(IT')== -1)&&(meeting.indexOf('(ITA')== -1)&&(meeting.indexOf('(SA')== -1)&&(meeting.indexOf('(RSA')== -1))
+          sendString+="sudo node " + nconf.get('scrapedir') +"getBetaPredictionData --conf " + nconf.get('datadir') + "scrapeconfig.json --raceid " +  raceid + " >> " + nconf.get('datadir') + "betapredictionsout.txt 2>&1\n";
+      }
+      res.send(sendString);
+
+    })
+  });
 }
 
 function getDateResults(req,res){
@@ -1852,6 +1952,86 @@ var parseHorseRaces = function( body) {
 	//}
 };
 
+var parseHorseRacesFromUrl = function( body) {
+  var racesArray=[];
+  //logger.info("Do Parse horse races" )
+  //if (error || response.statusCode != 200) {
+  //  logger.error(error);
+  //}
+  //else {
+    console.log("body: " + body);
+    $ = cheerio.load(body);
+
+    $(".ui-table__cell a").each(function(i,elem){
+        var href=$(elem).attr('href');
+        console.log("href: " + href);
+        if(href.indexOf('/results/')!=-1){
+          if ($(elem).attr("data-test-selector")=="item-table-date"){
+            //console.log("href: " + href);
+            racesArray.push(href);
+          }
+          
+        }
+        
+    });
+
+    return(racesArray);
+    
+    
+};
+
+var parseHorseRacesFromUrl_v2 = function( body) {
+  var racesArray=[];
+  //logger.info("Do Parse horse races" )
+  //if (error || response.statusCode != 200) {
+  //  logger.error(error);
+  //}
+  //else {
+    //console.log("body: " + body);
+    try{
+      var parsed=JSON.parse(body);
+      //console.log(JSON.stringify(parsed));
+      var form = parsed.form;
+      for(raceid in form){
+        var race=form[raceid];
+       // console.log("RACE: " + JSON.stringify(race));
+        var raceid=race.raceInstanceUid;
+        var raceDateTime=race.raceDatetime;
+        var index=raceDateTime.indexOf('T');
+        raceDate=raceDateTime.substring(0,index);
+        var courseUid=race.courseUid;
+        var courseName=race.courseName;
+        courseName=courseName.replace(' (A.W)','-aw').toLowerCase().replace(" (july)","-july");
+        //console.log(raceid + " " + raceDate + " " + courseUid + " " + courseName);
+        var url="/results/" + courseUid + "/" + courseName + "/" + raceDate + "/" + raceid;
+        racesArray.push(url);
+      }
+
+    }catch(exception){
+      logger.error(JSON.stringify(exception));
+    }
+    
+   /* $ = cheerio.load(body);
+
+    $(".ui-table__cell a").each(function(i,elem){
+        var href=$(elem).attr('href');
+        console.log("href: " + href);
+        if(href.indexOf('/results/')!=-1){
+          if ($(elem).attr("data-test-selector")=="item-table-date"){
+            //console.log("href: " + href);
+            racesArray.push(href);
+          }
+          
+        }
+        
+    });
+  */
+
+    return(racesArray);
+    
+    
+};
+
 var parseHorseName = function( body) {
   
   //logger.info("Do Parse horse races" )
@@ -2059,6 +2239,177 @@ var parseCardData=function(raceid,body){
 
 
 }
+
+var parseCardDataFromRaceUrl=function(raceurl,body){
+
+	var i=raceurl.lastIndexOf('/');
+
+	var raceid=raceurl.substring(i+1,raceurl.length);
+	var raceDateStr=raceurl.substring(i-10,i);
+	//console.log('raceDateStr ' + raceDateStr);
+	var yearS=raceDateStr.substring(0,4);
+	var monthS=raceDateStr.substring(5,7);
+	var dayS=raceDateStr.substring(8,11);
+
+	var object={
+		
+		status:"OK",
+		_id:raceid,
+		url:raceurl,
+		date:{year:yearS,month:monthS,day:dayS},
+		horses:{}
+	}
+	
+
+	$ = cheerio.load(body);
+
+	var offTime=$('.RC-courseHeader__time').text().replace(/(\r\n|\n|\r)/gm,"").trim();
+	var i=offTime.indexOf(':');
+	//logger.info("offTime: " + offTime + " i: " + i + " hrs: " + offTime.substring(0,i) + " mins: " + offTime.substring(i+1));
+	var otHrs=parseInt(offTime.substring(0,i));
+	var otMins=parseInt(offTime.substring(i+1));
+	//logger.info(offTime);
+	object.offtimeS=offTime;
+	object.offtime={
+		hours:otHrs,
+		minutes:otMins
+	}
+	
+
+	var fullPlaceText=$('.RC-courseHeader__name').text();
+	//console.log("fullPlaceText: " + fullPlaceText);
+
+	try{
+		object.meeting=fullPlaceText.replace(/(\r\n|\n|\r)/gm,"").trim().toUpperCase();
+	}catch(err){
+			object.status='ERROR';
+			object.meeting="parse error: " + err.message + " when parsing " + fullPlaceText + " in race " + raceurl;
+			logger.error("parse error: " + err.message + " when parsing " + fullPlaceText + " in race " + raceurl);
+
+	}
+	object.surface='TURF';
+	if((object.meeting.indexOf("(")!== -1)&&(object.meeting.indexOf(")")!== -1)){
+			if((object.meeting.indexOf("(AW)")!== -1)||(object.meeting.indexOf("(AW)")!== -1)){
+				object.surface="AW";
+			}
+
+		
+	}
+	//var dateText=$('.RC-courseHeader__date').text();
+	//console.log('dateText: ' + dateText);
+	var distanceRound=$('.RC-cardHeader__distance').text().trim();
+	//logger.info("distanceRound: " + distanceRound);
+
+	try{
+		var distObj=cardDistParser.parse(distanceRound);
+		//console.log('distance Obj: ' + JSON.stringify(distObj));
+		object.distance=distObj;
+	}catch(err){
+		object.status='ERROR';
+		object.distance="parse error: " + err.message + " when parsing " + distanceRound + " in race " + raceurl;
+		logger.error("parse error: " + err.message + " when parsing " + distanceRound + " in race " + raceurl);
+
+	}
+
+	var conditionsText="";
+	var courseInformation=$('.RC-cardHeader__courseDetails span[data-test-selector]');
+	//console.log('courseInformation :' + courseInformation.html());
+	courseInformation.each(function(index){
+		//console.log('text: '+ JSON.stringify($(this).get(0).attribs['data-test-selector']) + ' ' +$(this).text());
+		var selector=$(this).get(0).attribs['data-test-selector'];
+		if(selector=='RC-header__raceDistance'){
+			//console.log('there is a full distance');
+			try{
+			var distObj=cardDistParser.parse($(this).text().trim().replace('(','').replace(')',''));
+			//console.log('distance Obj: ' + JSON.stringify(distObj));
+			object.distance=distObj;
+			}catch(err){
+				//object.status='ERROR';
+				//object.distance="parse error: " + err.message + " when parsing " + distanceRound + " in race " + raceurl;
+				logger.error("parse error: " + err.message + " when parsing " + $(this).text().trim() + " in race " + raceurl);
+
+			}
+
+		}
+		else if(selector == 'RC-header__raceInstanceTitle'){
+			object.raceType='FLAT';
+			if($(this).text().toUpperCase().indexOf(' HURDLE') !== -1){
+				object.raceType='HURDLE';
+			}
+			else if($(this).text().toUpperCase().indexOf(' CHASE') !== -1){
+				object.raceType='CHASE';
+			}
+			else if($(this).text().toUpperCase().indexOf(' NATIONAL HUNT FLAT') !== -1){
+				object.raceType='NHFLAT';
+			}
+			
+			 
+
+		}
+		else if(selector == 'RC-header__raceClass' || selector == 'RC-header__rpAges'){
+			 conditionsText+= $(this).text().trim();
+		}
+	});
+//	console.log("conditionsText: " +conditionsText);
+	try{
+	 object.conditions=cardConditionsParser.parse(conditionsText);
+	}catch(err){
+			object.conditions="parse error: " + err.message + " when parsing " + conditionsText + " in race " + raceurl;
+			object.status='ERROR';
+			logger.error("parse error: " + err.message + " when parsing " + conditionsText + " in race " + raceurl);
+
+	}
+
+	var goingInformation=$('.RC-cardHeader div[data-test-selector]');
+	//console.log($(goingInformation).text());
+	goingInformation.each(function(index){
+		//console.log($this).text();
+		var selector=$(this).get(0).attribs['data-test-selector'];
+		if(selector=="RC-headerBox__going"){
+		//	console.log("selector: " + selector + "text: " +$(this).text());
+			var goingEl=$(this).find('.RC-headerBox__infoRow__content');
+			var goingText= $(goingEl).text();
+			try{
+				var goingObj=cardGoingParser.parse(goingText);
+				object.going=goingObj;
+
+			}catch(err){
+				object.status='ERROR';
+				object.going="parse error: " + err.message + " when parsing " + goingText + " in race " + raceurl;
+				logger.error("parse error: " + err.message + " when parsing " + goingText + " in race " + raceurl);
+			}
+		}
+	});
+
+	
+  $('.RC-runnerCardWrapper').each(function(index){
+    var horseLink=$(this).find('.RC-runnerMainWrapper a');
+    var hUrl=horseLink.attr('href');
+    var index = hUrl.indexOf('#');
+    hUrl=hUrl.substring(0,index);
+    var index1=hUrl.indexOf('horse/');
+    var index2=hUrl.lastIndexOf('/');
+    var hid=hUrl.substring(index1+6,index2);
+    var horseName=horseLink.text().trim().toUpperCase();
+    
+
+    var weight=$(this).find('.RC-runnerWgt__carried').get(0).attribs['data-order-wgt'];;
+
+ // console.log(hid + " horsename: " + horseName + " url: " + hUrl +" " +  weight);
+    object.horses[hid]={
+      name:horseName,
+      url:hUrl,
+      weight:weight
+    }
+
+  });
+	
+  return(object);
+
+
+
+}
+
 
 
 var parseResultPage = function(url,body,lps) {
@@ -2290,6 +2641,223 @@ var parseResultPage = function(url,body,lps) {
 	
 }
 
+//parse result page from the beta site
+var parseResultPageBeta = function(url,body,lps) {
+
+    var object=new Object();
+    object.horseids=[];
+    object.horses={};
+    object.url=url;
+   // logger.info("url: " + url);
+    var i1=url.lastIndexOf('/');
+    object.date=url.substring(i1-10,i1);
+
+    //console.log("body: " + body);
+    $ = cheerio.load(body);
+
+    var raceTime=$('h1 span').first().text();
+   // console.log("raceTime: " + raceTime);
+    object.time=raceTime;
+
+    var course=$('h1 a').text().trim().toUpperCase();
+   // logger.info("Course: " + course);
+    object.course=course;
+    
+    var textDesc=$('h2').text();
+
+    object.raceType='FLAT';
+    if(textDesc.toUpperCase().indexOf(' HURDLE') !== -1){
+      object.raceType='HURDLE';
+    }
+    else if(textDesc.toUpperCase().indexOf(' CHASE') !== -1){
+      object.raceType='CHASE';
+    }
+    else if(textDesc.toUpperCase().indexOf(' NATIONAL HUNT FLAT') !== -1){
+      object.raceType='NHFLAT';
+    }
+
+    var raceClassS=$(".rp-raceTimeCourseName_class").text().trim();
+   // console.log("raceClassS: " + raceClassS);
+
+    var raceAgesS=$(".rp-raceTimeCourseName_ratingBandAndAgesAllowed").text().trim();
+
+   // console.log("raceAgesS: " + raceAgesS);
+
+      var condsS=raceClassS + raceAgesS;
+     if(condsS !="")
+        object.conditions=conditionsParser.parse(condsS);
+
+
+    var raceDistFullS=$(".rp-raceTimeCourseName_distanceFull").text().trim();
+
+   // console.log("raceDistFullS: " + raceDistFullS);
+
+    if(raceDistFullS !== ""){
+      var raceDistObj=conditionsParser.parse(raceDistFullS);
+     // console.log("raceDistObj: " + JSON.stringify(raceDistObj));
+      if(raceDistObj[0] !== null){
+
+        if(typeof raceDistObj[0].miles == 'undefined')
+            raceDistObj[0].miles=0;
+          if(typeof raceDistObj[0].furlongs=='undefined')
+            raceDistObj[0].furlongs=0;
+          if(typeof raceDistObj[0].yards == 'undefined')
+            raceDistObj[0].yards=0;
+          //logger.info("distancep cond: " + JSON.stringify(cond));
+          object.distanceinyards=(raceDistObj[0].miles * 1760) + (raceDistObj[0].furlongs * 220) + raceDistObj[0].yards;
+          object.distanceinmetres=object.distanceinyards * 0.9144;
+
+      }
+    }
+    else{
+      var raceDistS=$(".rp-raceTimeCourseName_distance").text().trim();
+     // console.log("raceDistS: " + raceDistS);
+      var raceDistObj=conditionsParser.parse(raceDistS);
+      //console.log('rdo: ' + JSON.stringify(raceDistObj));
+      if(raceDistObj[0] !== null){
+
+        if(typeof raceDistObj[0].miles == 'undefined')
+            raceDistObj[0].miles=0;
+          if(typeof raceDistObj[0].furlongs=='undefined')
+            raceDistObj[0].furlongs=0;
+          if(typeof raceDistObj[0].yards == 'undefined')
+            raceDistObj[0].yards=0;
+          //logger.info("distancep cond: " + JSON.stringify(cond));
+          object.distanceinyards=(raceDistObj[0].miles * 1760) + (raceDistObj[0].furlongs * 220) + raceDistObj[0].yards;
+          object.distanceinmetres=object.distanceinyards * 0.9144;
+
+      }
+    }
+
+    
+
+     var goingS=$(".rp-raceTimeCourseName_condition").text().trim();
+    // console.log("goingS: " + goingS);
+     object.going=goingS;
+
+     var raceTimeS=$(".rp-raceInfo span").eq(1).text().trim();
+    // console.log("raceTimeS: " + raceTimeS);
+     object.racetime=timeParser.parse(raceTimeS)[0];
+     object.racetime.timeinseconds=(object.racetime.minutes * 60) + object.racetime.seconds + (object.racetime.milliseconds /100);
+     //console.log("Racetime: " + JSON.stringify(object.racetime));
+
+     if(typeof lps=='undefined'){
+      var surface="TURF";
+      if(object.going.indexOf('Standard') !== -1 ||object.going.indexOf('Fast')!== -1 ||object.going.indexOf('Slow')!== -1){
+        surface="AW"
+      }
+
+      lps = getLPS(object.raceType,surface,object.course,object.going,url);
+      object.surface=surface;
+    }
+   // console.log("lps: " + lps);
+
+    
+    var resultGrid=$(".rp-horseTable__mainRow");
+
+    for(var i=0;i<resultGrid.length;i++){
+      
+      var theTr=resultGrid[i];
+
+
+      var pos=$(theTr).find(".rp-horseTable__pos__number").text();
+      var index=pos.indexOf('(');
+        if(index != -1){
+          pos=pos.substring(0,index-1).trim();
+        }
+        else pos=pos.trim();
+      //console.log("pos: " + pos);
+
+      var horse=$(theTr).find(".rp-horseTable__horse a").first();
+      var horseName=$(horse).text().trim().toUpperCase();
+      var horseUrl=$(horse).attr('href');
+      var i1=horseUrl.indexOf('horse/');
+      var i2=nthIndex(horseUrl,'/',4);
+      var horseId=horseUrl.substring(i1+6,i2);
+
+
+      //console.log('horseid:' + horseId +' horseName: ' + horseName + " " + horseUrl);
+
+      var horsePriceS=$(theTr).find(".rp-horseTable__horse__price").text().trim();
+     // console.log("horsePriceS: " + horsePriceS);
+      var price;
+      try{
+           price=priceParser.parse(horsePriceS);
+          }catch(exception){
+            price={fractiontop:0, fractionbottom:0}
+      }
+     // console.log('price: ' + JSON.stringify(price));
+
+      var weightStonesS=$(theTr).find(".rp-horseTable__wgt span").eq(0).text().trim();
+     // console.log("weightStonesS: " + weightStonesS);
+
+      var weightLbS=$(theTr).find(".rp-horseTable__wgt span").eq(1).text().trim();
+     // console.log("weightLbS: " + weightLbS);
+
+      var weight=parseInt(weightStonesS) * 14 + parseInt(weightLbS);
+      //console.log("weight: " + weight);
+
+      var beatenByS=$(theTr).find(".rp-horseTable__pos__length span").eq(0).text().trim();
+
+      var beatenByCumulativeS=$(theTr).find(".rp-horseTable__pos__length span").eq(1).text().trim().replace('[','').replace(']','');
+
+      var dist=0;
+      var cumulativeDist=0;
+     //  console.log("beatenByS: " + beatenByS + " beatenByCumulativeS: " + beatenByCumulativeS); 
+
+     // console.log('char: ' + beatenByCumulativeS.charCodeAt(2).toString(16));
+      if(parseInt(pos)==1){
+
+      }
+      else if(parseInt(pos)==2){
+         dist=distParser.parse(beatenByS);
+         cumulativeDist=dist;
+      }
+      else{
+        if(beatenByS !== ""){
+           dist=distParser.parse(beatenByS);
+           cumulativeDist=distParser.parse(beatenByCumulativeS);
+        }
+
+       
+      }
+      if((cumulativeDist==0)&&(parseInt(pos) !== 1)){
+        dist=500;
+        cumulativeDist=500;
+      }
+     
+      
+     // console.log("dist: " + dist + " cumulativeDist: " + cumulativeDist);
+
+      var cumulativetime=cumulativeDist * (1.0 / lps);
+      var totaltime=cumulativetime + object.racetime.timeinseconds;
+      var speed=object.distanceinmetres/totaltime;
+
+     // console.log("cumulativetime: " + cumulativetime + " totaltime:  " + totaltime + " speed: " + speed);
+
+      if(typeof horseId !== 'undefined'){
+        //var weight=weightParser.parse(weightCarriedS);
+        object.horseids.push(horseId);
+        object.horses[horseId]={name:horseName,horseUrl,dstDesc:beatenByS,pos:parseInt(pos),dist:dist,cumulativedist:cumulativeDist,weight:weight,price:price,cumulativetime:cumulativetime,totaltime:totaltime,speed:speed};
+      }
+
+    }
+
+    return(object);
+
+
+  
+}
+
+function nthIndex(str, pat, n){
+    var L= str.length, i= -1;
+    while(n-- && i++<L){
+        i= str.indexOf(pat, i);
+        if (i < 0) break;
+    }
+    return i;
+}
+
 var parseDatePage=function(error,response,body){
 	if (error || response.statusCode != 200) {
 		logger.error(error);
@@ -2427,26 +2995,22 @@ function parseResult(result){
 
 }
 
-/*function getRaceResult(req,res){
-		logger.info("in getRaceResult");
-		var returnObject=new Object();
-		var url=req.query.url;
-
-		logger.info("getRaceResult: " + url);
-
-		returnObject.status="OK";
-		returnObject.url=url;
-
-		res.json(returnObject);
-
-
-
-}*/
 
 function getRaceResult(req,res){
+  if(typeof req.query.raceid !== 'undefined'){
+    getRaceResultById(req,res);
+  }
+  else if(typeof req.query.resulturl !== 'undefined'){
+    getRaceResultByUrl(req,res);
+
+  }
+}
+
+function getRaceResultById(req,res){
 	var raceid=req.query.raceid;
 	var lps=req.query.lps;
   var adddata=req.query.adddata;
+  
 
 	var lpsF;
 
@@ -2476,7 +3040,7 @@ function getRaceResult(req,res){
   else{
     var racedata=parseResultPage(url,resp.getBody(),lpsF);
     if(adddata=='true'){
-        addRaceResultData(raceid,racedata,res);
+        addRaceResultData(raceid,racedata,null,res);
     }
     else {
       res.json(racedata);
@@ -2486,7 +3050,62 @@ function getRaceResult(req,res){
 
 }
 
-function addRaceResultData(raceid,result,res){
+function getRaceResultByUrl(req,res){
+  var resulturl=req.query.resulturl;
+  var lps=req.query.lps;
+  var adddata=req.query.adddata;
+  
+
+  var index=resulturl.lastIndexOf('/');
+  var raceid=resulturl.substring(index+1,resulturl.length);
+  var lpsF;
+  logger.info("resulturl: " + resulturl + " raceid: " + raceid);
+
+  if(typeof lps !== 'undefined'){
+    lpsF=parseFloat(lps);
+  }
+
+  var url=nconf.get('rprooturl') + resulturl;
+  try{
+
+       var resp=srequest("GET",url);
+      //logger.info("getRaceResult response: " + resp.statusCode);
+      if(resp.statusCode !== 200){
+        resp=srequest("GET",url); //try again
+          if(resp.statusCode !== 200){
+            resp=srequest("GET",url); //and again
+          }
+      }
+
+      if(resp.statusCode !== 200){
+        logger.error("bad response code: " + resp.statusCode + " from: " + url);
+        var obj={
+          status:"ERROR",
+          message:"bad response code: " + resp.statusCode + " from: " + url
+        }
+        res.json(obj);
+      }
+      else{
+        var racedata=parseResultPageBeta(url,resp.getBody().toString(),lpsF);
+        if(adddata=='true'){
+            addRaceResultData(raceid,racedata,resulturl,res);
+        }
+        else {
+          res.json(racedata);
+        }
+      }
+    }catch(exception){
+      var obj={
+          status:"ERROR",
+          message:JSON.stringify(exception)
+        }
+        res.json(obj);
+    }
+
+
+}
+
+function addRaceResultData(raceid,result,resulturl,res){
     if(result.status =="ERROR"){
       res.json(result);
       return;
@@ -2510,16 +3129,35 @@ function addRaceResultData(raceid,result,res){
    raceDocument.surface=result.surface;
    raceDocument.racetype=result.raceType;
    raceDocument.winningtime=result.racetime.timeinseconds;
+   raceDocument.resulturl=resulturl;
 
    var conditions=result.conditions;
-   for(var x=0;x<conditions.length;x++){
+   if(typeof conditions !== 'undefined'){
+    for(var x=0;x<conditions.length;x++){
     if(conditions[x]!==null){
       raceDocument.conditions.push(conditions[x]);
     }
+    }
    }
+   
    //logger.info(JSON.stringify(raceDocument));
+  //insert the race document, if it is not already there
+  var databaseUrl="mongodb://" + nconf.get("databaseurl");
+  var MongoClient=require('mongodb').MongoClient;
+  MongoClient.connect(databaseUrl,function(err,db){
+    if(err) throw(err);
+    db.collection("races").findOne({_id:raceid},function(err,race){
+      if(race){
+        logger.info("Race alrady there: " +race._id);
+      }
+      else{
+        insertRaceDocument(raceDocument);
+      }
+    });
+    
   
-   insertRaceDocument(raceDocument);
+  
+   //insertRaceDocument(raceDocument);
    for(var horseid in result.horses ){
            // logger.info("horseid: " + horseid);
              var horseData=result.horses[horseid];
@@ -2532,7 +3170,7 @@ function addRaceResultData(raceid,result,res){
               //  logger.info("859709 race: " + JSON.stringify(race))
              // }
                 asyncCalls++;
-                db.horses.findOne({_id:horseid},function(err,horse){
+                db.collection("horses").findOne({_id:horseid},function(err,horse){
                   asyncCalls--
                   if(err){
                     logger.error(JSON.stringify(err));
@@ -2557,17 +3195,18 @@ function addRaceResultData(raceid,result,res){
                         weight:horseData.weight,
                         speed:horseData.speed,
                         position:horseData.pos,
-                        price: horseData.price
+                        price: horseData.price,
+                        resulturl:resulturl
                       }
                       //logger.info("horsedoc: " + JSON.stringify(horseDoc));
                       asyncCalls++;
-                      db.horses.insert(horseDoc,function(err,horse){
+                      db.collection("horses").insert(horseDoc,function(err,horse){
                         asyncCalls--;
                         if(err){
                           logger.error(JSON.stringify(err));
                         }
                         else{
-                          logger.info("Inserted horse: " + horse._id);
+                          logger.info("Inserted horse: " + horseDoc._id);
                         }
                         if(asyncCalls==0){
                           res.json(result);
@@ -2587,11 +3226,12 @@ function addRaceResultData(raceid,result,res){
                         weight:horseData.weight,
                         speed:horseData.speed,
                         position:horseData.pos,
-                        price: horseData.price
+                        price: horseData.price,
+                        resulturl:resulturl
 
                       }
                       asyncCalls++;
-                      db.horses.update({"_id": horse._id},{$set:{performances:performances}},function(err,count){
+                      db.collection("horses").update({"_id": horse._id},{$set:{performances:performances}},function(err,count){
                         asyncCalls--;
                         if(err){
                           logger.error(JSON.stringify(err));
@@ -2614,6 +3254,7 @@ function addRaceResultData(raceid,result,res){
                   });
                 }(raceDocument,horseData,horseid);
               }
+        });
 
 
 
@@ -2623,8 +3264,11 @@ function addRaceResultData(raceid,result,res){
 
 function insertRaceDocument(document){
   //logger.info("insert race: " + JSON.stringify(document));
- 
-      db.races.insert(document,function(err,race){
+  var MongoClient=require('mongodb').MongoClient;
+  var databaseUrl="mongodb://" + nconf.get("databaseurl");
+  MongoClient.connect(databaseUrl,function(err,db){
+    if(err) throw(err);
+    db.collection("races").insert(document,function(err,race){
        // asyncCalls--;
         if(err){
           //don't report key errors
@@ -2640,6 +3284,10 @@ function insertRaceDocument(document){
        }
        
      });
+    
+  });
+ 
+      
       
   }
 
@@ -2657,7 +3305,20 @@ function getHorseDates(req,res){
 
 function getHorseRaces(req,res){
 
-	var horseid=req.query.horseid;
+  var horseid=req.query.horseid;
+  var horseurl=req.query.horseurl;
+
+  if(typeof horseid !== 'undefined'){
+    getHorseRacesFromId(horseid,req,res);
+  }
+  else{
+    getHorseRacesFromUrl(horseurl,req,res);
+  }
+}
+
+function getHorseRacesFromId(horseid,req,res){
+
+	//var horseid=req.query.horseid;
 	var url="http://www.racingpost.com/horses/horse_home.sd?horse_id=" + horseid;
 
 	var resp=srequest("GET",url);
@@ -2666,17 +3327,98 @@ function getHorseRaces(req,res){
 
 }
 
+function getHorseRacesFromUrl(horseurl,req,res){
+
+ /* var i1=horseurl.indexOf("/horse");
+  var i2=horseurl.lastIndexOf('/');
+
+  var horseid=horseurl.substring(i1+6,i2);
+  var horsename=horseurl.substring(i2+1,horseurl.length);
+  
+  var url=nconf.get('rprooturl')+ "/profile/horse/tabs/" + horseid + "/" + horsename + "/form/horse/0/0/1/desktop";
+*/
+  console.log("horse url: " + nconf.get('rprooturl')+horseurl);
+
+ // var resp=srequest("GET",nconf.get('rprooturl')+horseurl);
+  //console.log(resp.getBody().toString());
+ // var racesData=parseHorseRacesFromUrl(resp.getBody().toString());
+ // res.json(racesData);
+
+  var req = require('request');
+
+  var headers = {
+            'User-Agent': 'javascript'
+  };
+
+  var options = {
+      url: nconf.get('rprooturl')+horseurl,
+      headers:headers
+
+  };
+
+
+  req(options, function(error,resp,body){
+       //console.log("response: " + response.statusCode);
+      // console.log(JSON.stringify(options));
+      if (!error && resp.statusCode == 200) {
+          //console.log(body.toString());
+          var racesData=parseHorseRacesFromUrl_v2(body);
+          //console.log(JSON.stringify(racesData));
+          res.json(racesData);
+      }
+      else{
+        
+        if(error){
+          logger.error(JSON.stringify(error));
+
+        }
+        if(resp){
+          logger.error(" response: " + resp.statusCode);
+        }
+      }
+  });
+
+  
+ 
+}
+
 function getHorseName(req,res){
   var horseid=req.query.horseid;
-  var url="http://www.racingpost.com/horses/horse_home.sd?horse_id=" + horseid;
+  db.horses.findOne({_id:horseid},function(err,horse){
+    if((horse != null) && (typeof horse.name != 'undefined')){
+      res.json({id:horseid,name:horse.name});
+    }
+    else{
+      var url="http://www.racingpost.com/horses/horse_home.sd?horse_id=" + horseid;
 
-  var resp=srequest("GET",url);
-  var nameData=parseHorseName(resp.getBody());
-  res.json({id:horseid,name:nameData});
+      var resp=srequest("GET",url);
+      var nameData=parseHorseName(resp.getBody());
+      db.horses.update({_id:horseid},{$set:{name: nameData}});
+      res.json({id:horseid,name:nameData});
+    }
+  });
+
+  
 }
 
 function getCardData(req,res){
+
 	var raceid=req.query.raceid;
+	var raceurl=req.query.raceurl;
+	if(typeof raceid != 'undefined'){
+		getCardDataFromRaceid(req,res,raceid);
+	}
+	else if(typeof raceurl != 'undefined'){
+		getCardDataFromRaceUrl(req,res,raceurl);
+
+	}
+	else{
+		res.end();
+	}
+}
+
+function getCardDataFromRaceid(req,res,raceid){
+	//var raceid=req.query.raceid;
 	var url="http://www.racingpost.com/horses2/cards/card.sd?race_id=" + raceid;
 
 	var resp=srequest("GET",url);
@@ -2687,16 +3429,16 @@ function getCardData(req,res){
 	var index=0;
 	for(var horseid in cardData.horses){
 		index++
-		logger.info("Get races for " + horseid);
+		//logger.info("Get races for " + horseid);
 		 horseRacesUrl="http://localhost:" + server.address().port + "/gethorseraces?horseid=" + horseid;
-					logger.info('horseRacesUrl: ' + horseRacesUrl);
+					//logger.info('horseRacesUrl: ' + horseRacesUrl);
 					var horseName=cardData.horses[horseid].name;
 					var horseWeight=cardData.horses[horseid].weight;
 					var r=function(hid,hn,hw){
 						request(horseRacesUrl,function(error,response,body){
 							index--;
               try{
-    							logger.info('body: ' + body);
+    							//logger.info('body: ' + body);
     							//if index==0;
     							cardData.horses[hid]={
     								races:JSON.parse(body),
@@ -2726,14 +3468,58 @@ function getCardData(req,res){
 }
 
 
-if(typeof nconf.get('date')!== 'undefined'){
+function getCardDataFromRaceUrl(req,res,raceurl){
+	//var raceid=req.query.raceid;
+	var url=nconf.get('rprooturl') + raceurl;
+	console.log("getCardDataFromRaceUrl:"  + url);
+
+	var resp=srequest("GET",url);
+	//console.log(resp.getBody().toString());
+  var index=0;
+	var cardData=parseCardDataFromRaceUrl(raceurl,resp.getBody().toString());
+  for(var horseid in cardData.horses){
+    var horse=cardData.horses[horseid];
+    var hurl=horse.url;
+    index++
+    //logger.info("Get races for " + horseid + " from " + hurl);
+
+    hurl=hurl.replace("profile/","profile/tab/") + "/form";
+     horseRacesUrl="http://localhost:" + server.address().port + "/gethorseraces?horseurl=" + hurl;
+
+     var r=function(hid){
+            request(horseRacesUrl,function(error,response,body){
+              index--;
+              try{
+                  //logger.info('body: ' + body);
+                  //if index==0;
+                  cardData.horses[hid].races=JSON.parse(body);
+
+                 
+              }catch(exception){
+                //it didn't work
+                logger.error(JSON.stringify("Exception: " + exception + " in: " + horseRacesUrl + " body: " + body));
+              }
+              if(index==0){ //we've done all horses
+                res.json(cardData);
+
+              }
+            });
+          }(horseid)
+   }
+
+
+
+}
+
+
+/*if(typeof nconf.get('date')!== 'undefined'){
 	var date= nconf.get('date');
 	//console.log("date: " + date);
 	var results=addRaceData(date);
 	console.log(JSON.stringify(results));
 
 	
-}
+}*/
 
 function isEven(n) 
 {
