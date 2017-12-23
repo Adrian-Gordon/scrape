@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-
-=======
->>>>>>> develop
  var moment=require('moment');
  gaussian=require('gaussian');
 var httpRequest = require('request');
@@ -211,11 +207,8 @@ function bfLogin(raceid,marketid){
   logger.info("bfLogin: " + raceid + " marketid: " + marketid);
 
 	httpRequest({
-<<<<<<< HEAD
-            url: "https://identitysso.betfair.com/api/login",
-=======
+
             url: "https://identitysso.betfair.com/api/login?username=" + nconf.get('bfusername') +"&password=" + nconf.get('bfpw'),
->>>>>>> develop
             method: "POST",  
             headers: {
 			    'X-Application': nconf.get('apikey'),
