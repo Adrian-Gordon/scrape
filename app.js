@@ -3066,7 +3066,47 @@ function getRaceResultByUrl(req,res){
   }
 
   var url=nconf.get('rprooturl') + resulturl;
-  try{
+
+
+  var req = require('request');
+
+  var headers = {
+            'User-Agent': 'javascript'
+  };
+
+  var options = {
+      url: url,
+      headers:headers
+
+  };
+  req(options, function(error,resp,body){
+    if(resp.statusCode !== 200){
+       var obj={
+          status:"ERROR",
+          message:JSON.stringify("bad response code: " + resp.statusCode + " from: " + url)
+        }
+         logger.error("bad response code: " + resp.statusCode + " from: " + url);
+        res.json(obj);
+    }
+    else{
+      var racedata=parseResultPageBeta(url,body,lpsF);
+        if(adddata=='true'){
+            addRaceResultData(raceid,racedata,resulturl,res);
+        }
+        else {
+          res.json(racedata);
+        }
+
+    }
+
+  });
+
+
+
+
+
+
+  /*try{
 
        var resp=srequest("GET",url);
       //logger.info("getRaceResult response: " + resp.statusCode);
@@ -3100,7 +3140,7 @@ function getRaceResultByUrl(req,res){
           message:JSON.stringify(exception)
         }
         res.json(obj);
-    }
+    }*/
 
 
 }
