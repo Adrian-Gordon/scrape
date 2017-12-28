@@ -117,7 +117,7 @@ var port=nconf.get("port");
 
 
 var request = require('request');
-var srequest=require('sync-request');
+
 
 
 //var asyncCalls=0;
@@ -193,7 +193,7 @@ function processRaceData(raceurl){
   
       var raceUrl="http://" + host + ":" + port + "/getcarddata?raceurl="+raceurl;
      // asyncCalls++;
-      request({url:raceUrl,headers:{'User-Agent':'javascript'}},function(error,response,body){
+      request({url:raceUrl,function(error,response,body){
        // asyncCalls--;
         try{
 
@@ -418,7 +418,7 @@ function processRaceResultData(raceid,attempt){
   
   var raceUrl="http://" + host + ":" + port + "/getraceresult?raceid="+raceid;
   asyncCalls++;
-  request({url:raceUrl,headers:{'User-Agent':'javascript'}},function(error,response,body){
+  request({url:raceUrl,function(error,response,body){
     asyncCalls--;
 
     if(error){
