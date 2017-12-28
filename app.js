@@ -3515,7 +3515,7 @@ function getCardDataFromRaceUrl(req,res,raceurl){
 	var url=nconf.get('rprooturl') + raceurl;
 	console.log("getCardDataFromRaceUrl:"  + url);
 
-	var resp=srequest("GET",url);
+	var resp=srequest("GET",url,{'headers':{'User-Agent':'javascript'}});
 	//console.log(resp.getBody().toString());
   var index=0;
 	var cardData=parseCardDataFromRaceUrl(raceurl,resp.getBody().toString());
