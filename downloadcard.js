@@ -193,7 +193,7 @@ function processRaceData(raceurl){
   
       var raceUrl="http://" + host + ":" + port + "/getcarddata?raceurl="+raceurl;
      // asyncCalls++;
-      request({url:raceUrl},function(error,response,body){
+      request({url:raceUrl,headers:{'User-Agent':'javascript'}},function(error,response,body){
        // asyncCalls--;
         try{
 
@@ -418,7 +418,7 @@ function processRaceResultData(raceid,attempt){
   
   var raceUrl="http://" + host + ":" + port + "/getraceresult?raceid="+raceid;
   asyncCalls++;
-  request({url:raceUrl},function(error,response,body){
+  request({url:raceUrl,headers:{'User-Agent':'javascript'}},function(error,response,body){
     asyncCalls--;
 
     if(error){
