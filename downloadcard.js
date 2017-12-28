@@ -193,7 +193,7 @@ function processRaceData(raceurl){
   
       var raceUrl="http://" + host + ":" + port + "/getcarddata?raceurl="+raceurl;
      // asyncCalls++;
-      request({url:raceUrl,function(error,response,body){
+      request({url:raceUrl},function(error,response,body){
        // asyncCalls--;
         try{
 
@@ -288,73 +288,6 @@ function processRaceData(raceurl){
 
           
 
-           //iterate over the horses in the document,making sure we have all of the data for each of
-           //the races the horse has run in
-          /* for(runnerid in raceDocument.runners){
-           //for(var i=0;i<raceDocument.runners.length;i++){
-            //  var runner=raceDocument.runners[i];
-              runner=raceDocument.runners[runnerid];
-              logger.info("Check horse: " + runner);
-
-              for(var j=0;j<runner.races.length;j++){
-                var raceid=runner.races[j];
-                  logger.info(" check race: " + raceid);
-                  var f=function(rid,run){
-                    asyncCalls++;
-                    db.races.findOne({_id:rid},function(err,race){
-                        asyncCalls--;
-                        if(err){
-                          logger.error(JSON.stringify(err));
-                        }
-                        else if(race==null){ //it's not already there
-                           logger.info("race: " + rid + " is not there"); 
-                           //so add the race and all the horses  
-                           processRaceResultData(rid,0);
-
-                        }
-                        else{
-                            logger.info("race: " + rid + " is there"); 
-                            //so check that this horse has data for this race
-                            var g=function(r){
-                                asyncCalls++;
-                                db.horses.findOne({_id:run},function(err,horse){
-                                    asyncCalls--;
-                                   // logger.info("horse: " + run + " " + JSON.stringify(horse));
-                                    if(err){
-                                      logger.error(JSON.stringify(err));
-                                    }
-                                    else if(horse==null){ //it's not already there
-                                       logger.info("horse: " + r + " is not there"); 
-                                        processRaceResultData(rid,0);
-                                       //so add the race and all the horses  
-                                    }
-                                    else{
-                                      logger.info("horse: " + r + " is there");
-                                      if(typeof horse.performances[rid]=='undefined'){
-                                        logger.info("but performance for " + r + " in race: " + rid +" is missing");
-                                         processRaceResultData(rid,0);
-                                      }
-                                      else{
-                                        logger.info("and performance for "+  r + " in race: " + rid +" is there");
-                                      }
-                                    }
-
-                                    if(asyncCalls==0){
-                                      logger.info("DONE");
-                                      process.exit();
-                                    }
-                                })
-                              }(run)
-                        }
-                      if(asyncCalls==0){
-                        logger.info("DONE");
-                        process.exit();
-                      }
-                    });
-                  }(raceid,runner);
-              }
-           }*/
-
 
         }catch(err){
           //if(asyncCalls==0){
@@ -418,7 +351,7 @@ function processRaceResultData(raceid,attempt){
   
   var raceUrl="http://" + host + ":" + port + "/getraceresult?raceid="+raceid;
   asyncCalls++;
-  request({url:raceUrl,function(error,response,body){
+  request({url:raceUrl},function(error,response,body){
     asyncCalls--;
 
     if(error){
