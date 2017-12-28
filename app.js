@@ -2810,8 +2810,10 @@ var parseResultPageBeta = function(url,body,lps) {
 
       }
       else if(parseInt(pos)==2){
-         dist=distParser.parse(beatenByS);
-         cumulativeDist=dist;
+         if(beatenByS !== ""){
+           dist=distParser.parse(beatenByS);
+            cumulativeDist=dist;
+          }
       }
       else{
         if(beatenByS !== ""){
