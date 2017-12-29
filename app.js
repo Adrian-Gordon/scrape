@@ -2818,9 +2818,9 @@ var parseResultPageBeta = function(url,body,lps) {
       else{
         if(beatenByS !== ""){
            dist=distParser.parse(beatenByS);
-           if(beatenByCumulativeS !== "")
+           //if(beatenByCumulativeS !== "")
             cumulativeDist=distParser.parse(beatenByCumulativeS);
-           else cumulativeDist=dist;
+          // else cumulativeDist=dist;
         }
 
        
@@ -3095,12 +3095,22 @@ function getRaceResultByUrl(req,res){
         res.json(obj);
     }
     else{
-      var racedata=parseResultPageBeta(url,body,lpsF);
-        if(adddata=='true'){
-            addRaceResultData(raceid,racedata,resulturl,res);
-        }
-        else {
-          res.json(racedata);
+      try{
+          var racedata=parseResultPageBeta(url,body,lpsF);
+            if(adddata=='true'){
+                addRaceResultData(raceid,racedata,resulturl,res);
+            }
+            else {
+              res.json(racedata);
+            }
+        }catch(exception){
+          var obj={
+            status:"ERROR",
+            message:JSON.stringify("Error parsing result data from: " + url)
+          }
+          logger.error("Error parsing result data from: " + url + "\n" + JSON.stringify(exception));
+          res.json(obj);
+
         }
 
     }
