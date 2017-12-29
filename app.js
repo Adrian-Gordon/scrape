@@ -2766,7 +2766,7 @@ var parseResultPageBeta = function(url,body,lps) {
           pos=pos.substring(0,index-1).trim();
         }
         else pos=pos.trim();
-      //console.log("pos: " + pos);
+      logger.info("pos: " + pos);
 
       var horse=$(theTr).find(".rp-horseTable__horse a").first();
       var horseName=$(horse).text().trim().toUpperCase();
@@ -2803,7 +2803,7 @@ var parseResultPageBeta = function(url,body,lps) {
 
       var dist=0;
       var cumulativeDist=0;
-     //  console.log("beatenByS: " + beatenByS + " beatenByCumulativeS: " + beatenByCumulativeS); 
+     logger.info("beatenByS: " + beatenByS + " beatenByCumulativeS: " + beatenByCumulativeS); 
 
      // console.log('char: ' + beatenByCumulativeS.charCodeAt(2).toString(16));
       if(parseInt(pos)==1){
@@ -3082,8 +3082,8 @@ function getRaceResultByUrl(req,res){
 
   };
   req(options, function(error,resp,body){
-    logger.info("body: " + body);
-    logger.info("resp.statusCode: " + resp.statusCode);
+   // logger.info("body: " + body);
+   // logger.info("resp.statusCode: " + resp.statusCode);
     if(resp.statusCode !== 200){
        var obj={
           status:"ERROR",
