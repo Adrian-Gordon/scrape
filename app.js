@@ -3082,6 +3082,8 @@ function getRaceResultByUrl(req,res){
 
   };
   req(options, function(error,resp,body){
+    logger.info("body: " + body);
+    logger.info("resp.statusCode: " + resp.statusCode);
     if(resp.statusCode !== 200){
        var obj={
           status:"ERROR",
