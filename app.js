@@ -2818,7 +2818,9 @@ var parseResultPageBeta = function(url,body,lps) {
       else{
         if(beatenByS !== ""){
            dist=distParser.parse(beatenByS);
-           cumulativeDist=distParser.parse(beatenByCumulativeS);
+           if(beatenByCumulativeS !== "")
+            cumulativeDist=distParser.parse(beatenByCumulativeS);
+           else cumulativeDist=dist;
         }
 
        
