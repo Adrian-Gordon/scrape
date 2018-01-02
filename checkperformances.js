@@ -201,7 +201,12 @@ function processOnePerformance(db){
                       var res=JSON.parse(resp.body);
                       if(res.status=='ERROR'){
                         logger.error(JSON.stringify(res));
-                        processOnePerformance(db);//leave this one in place, then get the next one
+                        //log the error
+                        db.collection("perfstocheck").update({_id:id},{$set:{message:res.message}},function(err,count){
+
+                           processOnePerformance(db); //and process the next one
+                        })
+                       
                       }
                       else{
                         db.collection("perfstocheck").remove({_id:id},function(err){ //remove this one
