@@ -136,7 +136,7 @@ function processOnePerformance(db){
         doReplace=true;
 
       }
-      logger.info('check ' + horseid + " " + raceid);
+      //logger.info('check ' + horseid + " " + raceid);
 
       //now go check the performance
       var fn = function(hid,rid,rurl,pid){
@@ -176,7 +176,7 @@ function processOnePerformance(db){
 
             }
             else{
-              logger.info("horse is there");
+              //logger.info("horse is there");
               var horsePerfs=horse.performances;
               //logger.info("horsePers: " + JSON.stringify(horse));
               var thisPerf=horsePerfs[rid];
@@ -191,7 +191,7 @@ function processOnePerformance(db){
                
                 url="http://" + nconf.get("host") + ":" + nconf.get("port") + "/getraceresult?raceid=" + rid + "&adddata=true";
               }
-              logger.info("url: " + url);
+              //logger.info("url: " + url);
                 request(url, function(err,resp,body){
                   if(err){
                     logger.error(JSON.stringify(err));
@@ -201,6 +201,13 @@ function processOnePerformance(db){
                       var res=JSON.parse(resp.body);
                       if(res.status=='ERROR'){
                         logger.error(JSON.stringify(res));
+                        processOnePerformance(db);//leave this one in place, then get the next one
+                      }
+                      else{
+                        db.collection("perfstocheck").remove({_id:id},function(err){ //remove this one
+
+                          processOnePerformance(db);//get the next one
+                        });
                       }
                     }
                     catch(err){
@@ -208,15 +215,15 @@ function processOnePerformance(db){
                     }
                     
                   }
-                  db.collection("perfstocheck").remove({_id:id},function(err){
+                 // db.collection("perfstocheck").remove({_id:id},function(err){
 
-                      processOnePerformance(db);//get the next one
-                  })
+                 //     processOnePerformance(db);//get the next one
+                 // })
 
                 });
               }
               else{
-                logger.info("performance already there");
+                //logger.info("performance already there");
                  db.collection("perfstocheck").remove({_id:id},function(err){
 
                     processOnePerformance(db);//get the next one
