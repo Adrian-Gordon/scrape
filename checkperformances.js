@@ -165,7 +165,7 @@ function processOnePerformance(db){
                       db.collection("perfstocheck").update({_id:id},{$set:{message:res.message}},function(err,count){
                         	//setTimeout(processOnePerformance,1000,db);
                            
-                           if(res.status.indexOf("403") !=- 1){
+                           if(res.message.indexOf("403") !=- 1){
                            		process.exit(); //quit on 403
                            }
                            else{
@@ -224,7 +224,7 @@ function processOnePerformance(db){
                         db.collection("perfstocheck").update({_id:id},{$set:{message:res.message}},function(err,count){
                         	//setTimeout(processOnePerformance,1000,db);
                            //processOnePerformance(db); //and process the next one
-                           if(res.status.indexOf("403") !=- 1){
+                           if(res.message.indexOf("403") !=- 1){
                            		process.exit(); //quit on 403
                            }
                            else{
