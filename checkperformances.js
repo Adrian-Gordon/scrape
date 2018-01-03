@@ -121,7 +121,7 @@ MongoClient.connect(databaseUrl,function(err,db){
 
 function processOnePerformance(db){
 
-  db.collection("perfstocheck").findOne({},function(err,perf){
+  db.collection("perfstocheck").findOne({message:{$exists:false}},function(err,perf){
     if(perf){
       var id=perf._id;
       var horseid=perf.runnerid;
