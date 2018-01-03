@@ -3086,7 +3086,15 @@ function getRaceResultByUrl(req,res){
   req(options, function(error,resp,body){
    // logger.info("body: " + body);
    // logger.info("resp.statusCode: " + resp.statusCode);
-    if(resp.statusCode !== 200){
+   if(typeof resp == 'undefined'){
+    var obj={
+          status:"ERROR",
+          message:"No response from: " + url
+        }
+         logger.error("No response from: " + url);
+        res.json(obj);
+   }
+  else if(resp.statusCode !== 200){
        var obj={
           status:"ERROR",
           message:JSON.stringify("bad response code: " + resp.statusCode + " from: " + url)

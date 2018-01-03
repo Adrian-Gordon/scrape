@@ -142,7 +142,7 @@ function processOnePerformance(db){
       var fn = function(hid,rid,rurl,pid){
           db.collection("horses").findOne({_id:horseid},function(err,horse){
             if(!horse){
-              logger.info("horse not there: " + hid);
+              //logger.info("horse not there: " + hid);
               var url;
               if(typeof rurl !== 'undefined'){
                 
@@ -182,7 +182,7 @@ function processOnePerformance(db){
               var thisPerf=horsePerfs[rid];
 
               if((typeof thisPerf=='undefined')||doReplace){
-                logger.info("horse perf not there: " + hid + " " + rid);
+                //logger.info("horse perf not there: " + hid + " " + rid);
                 var url;
               if(typeof rurl !== 'undefined'){
                  url="http://" + nconf.get("host") + ":" + nconf.get("port") + "/getraceresult?resulturl=" + rurl + "&adddata=true";
