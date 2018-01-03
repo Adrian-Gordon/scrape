@@ -115,7 +115,8 @@ var srequest=require('sync-request');
 
 MongoClient.connect(databaseUrl,function(err,db){
     if(err) throw(err);
-    processOnePerformance(db);
+    setTimeout(processOnePerformance,1000,db);
+    //processOnePerformance(db);
 });
 
 
@@ -168,8 +169,8 @@ function processOnePerformance(db){
                   
                 }
                 db.collection("perfstocheck").remove({_id:id},function(err){
-
-                    processOnePerformance(db);//get the next one
+                	setTimeout(processOnePerformance,1000,db);
+                    //processOnePerformance(db);//get the next one
                 })
 
               });
@@ -203,15 +204,15 @@ function processOnePerformance(db){
                         logger.error(JSON.stringify(res));
                         //log the error
                         db.collection("perfstocheck").update({_id:id},{$set:{message:res.message}},function(err,count){
-
-                           processOnePerformance(db); //and process the next one
+                        	setTimeout(processOnePerformance,1000,db);
+                           //processOnePerformance(db); //and process the next one
                         })
                        
                       }
                       else{
                         db.collection("perfstocheck").remove({_id:id},function(err){ //remove this one
-
-                          processOnePerformance(db);//get the next one
+                        	setTimeout(processOnePerformance,1000,db);
+                          //processOnePerformance(db);//get the next one
                         });
                       }
                     }
@@ -230,8 +231,8 @@ function processOnePerformance(db){
               else{
                 //logger.info("performance already there");
                  db.collection("perfstocheck").remove({_id:id},function(err){
-
-                    processOnePerformance(db);//get the next one
+                 	setTimeout(processOnePerformance,1000,db);
+                    //processOnePerformance(db);//get the next one
                 })
               }
 
