@@ -115,8 +115,8 @@ var srequest=require('sync-request');
 
 MongoClient.connect(databaseUrl,function(err,db){
     if(err) throw(err);
-    setTimeout(processOnePerformance,1000,db);
-    //processOnePerformance(db);
+    //setTimeout(processOnePerformance,1000,db);
+    processOnePerformance(db);
 });
 
 
@@ -162,16 +162,34 @@ function processOnePerformance(db){
                     var res=JSON.parse(resp.body);
                     if(res.status=='ERROR'){
                       logger.error(JSON.stringify(res));
+                      db.collection("perfstocheck").update({_id:id},{$set:{message:res.message}},function(err,count){
+                        	//setTimeout(processOnePerformance,1000,db);
+                           
+                           if(res.status.indexOf("403") !=- 1){
+                           		process.exit(); //quit on 403
+                           }
+                           else{
+                           	processOnePerformance(db); //and process the next one
+                           }
+                        })
                     }
+                    else{
+                    	db.collection("perfstocheck").remove({_id:id},function(err){
+		                	//setTimeout(processOnePerformance,1000,db);
+		                    processOnePerformance(db);//get the next one
+		                })
+                    }
+
+
                   }catch(err){
                     logger.error("error: " + err + " url: " + url);
                   }
                   
                 }
-                db.collection("perfstocheck").remove({_id:id},function(err){
-                	setTimeout(processOnePerformance,1000,db);
-                    //processOnePerformance(db);//get the next one
-                })
+               // db.collection("perfstocheck").remove({_id:id},function(err){
+                	//setTimeout(processOnePerformance,1000,db);
+                //    processOnePerformance(db);//get the next one
+               // })
 
               });
 
@@ -204,15 +222,21 @@ function processOnePerformance(db){
                         logger.error(JSON.stringify(res));
                         //log the error
                         db.collection("perfstocheck").update({_id:id},{$set:{message:res.message}},function(err,count){
-                        	setTimeout(processOnePerformance,1000,db);
+                        	//setTimeout(processOnePerformance,1000,db);
                            //processOnePerformance(db); //and process the next one
+                           if(res.status.indexOf("403") !=- 1){
+                           		process.exit(); //quit on 403
+                           }
+                           else{
+                           	processOnePerformance(db); //and process the next one
+                           }
                         })
                        
                       }
                       else{
                         db.collection("perfstocheck").remove({_id:id},function(err){ //remove this one
-                        	setTimeout(processOnePerformance,1000,db);
-                          //processOnePerformance(db);//get the next one
+                        	//setTimeout(processOnePerformance,1000,db);
+                          processOnePerformance(db);//get the next one
                         });
                       }
                     }
@@ -231,8 +255,8 @@ function processOnePerformance(db){
               else{
                 //logger.info("performance already there");
                  db.collection("perfstocheck").remove({_id:id},function(err){
-                 	setTimeout(processOnePerformance,1000,db);
-                    //processOnePerformance(db);//get the next one
+                 	//setTimeout(processOnePerformance,1000,db);
+                    processOnePerformance(db);//get the next one
                 })
               }
 
