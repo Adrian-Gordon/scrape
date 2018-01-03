@@ -186,7 +186,7 @@ function processOnePerformance(db){
                 //logger.info("horse perf not there: " + hid + " " + rid);
                 var url;
               if(typeof rurl !== 'undefined'){
-                 url="http://" + nconf.get("host") + ":" + nconf.get("port") + "/getraceresult?resulturl=" + rurl + "&adddata=true";
+                 url="http://" + nconf.get("host") + ":" + nconf.get("port") + "/getraceresult?resulturl=" + rurl.replace(" ","-") + "&adddata=true";
               }
               else if(typeof rid != 'undefined'){
                
