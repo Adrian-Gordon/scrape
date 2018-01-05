@@ -143,7 +143,7 @@ if(typeof horseid !== 'undefined'){
     	for(raceid in performances){
     		var perf=performances[raceid];
     		if(perf.distance >= minDist && perf.distance <= maxDist && perf.going == going && perf.surface==surface && perf.racetype==code){
-    			if((perf.speed < maxPermissibleSpeed) && (perf.speed > floor)){
+    			if((perf.speed < maxPermissibleSpeed) && (perf.speed > floor) &&(perf.speed < ceiling)){
     				var normalizedSpeed=(perf.speed - 11.0)/(17.282474226804123 - 11.0);
     				if((normalizedSpeed > 0) && (normalizedSpeed < 1))console.log(normalizedSpeed);
     				if(minSpeed==0.0) minSpeed=perf.speed;
