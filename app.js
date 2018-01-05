@@ -3175,7 +3175,7 @@ function addRaceResultData(raceid,result,resulturl,res){
       return;
     }
 
-    logger.info("result: " + JSON.stringify(result));
+    //logger.info("result: " + JSON.stringify(result));
     var asyncCalls=0;
     var raceDocument={
       meeting:result.course,
@@ -3212,7 +3212,7 @@ function addRaceResultData(raceid,result,resulturl,res){
     if(err) throw(err);
     db.collection("races").findOne({_id:raceid},function(err,race){
       if(race){
-        logger.info("Race alrady there: " +race._id);
+        //logger.info("Race alrady there: " +race._id);
       }
       else{
         insertRaceDocument(raceDocument);
@@ -3301,7 +3301,7 @@ function addRaceResultData(raceid,result,resulturl,res){
                           logger.error(JSON.stringify(err));
                         }
                         else{
-                          logger.info("Updated record for horse: " + horse._id);
+                          //logger.info("Updated record for horse: " + horse._id);
                         }
                         if(asyncCalls==0){
                           res.json(result)
@@ -3344,7 +3344,7 @@ function insertRaceDocument(document){
         }
        else{ 
           //logger.info(JSON.stringify(race));
-          logger.info("Added race: " + document._id);
+         // logger.info("Added race: " + document._id);
        }
        
      });
