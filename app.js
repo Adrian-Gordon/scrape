@@ -3075,7 +3075,7 @@ function getRaceResultByUrl(req,res){
   var req = require('request');
 
   var headers = {
-            'User-Agent': 'javascript'
+            'User-Agent': 'Mozilla/5.0'
   };
 
   var options = {
