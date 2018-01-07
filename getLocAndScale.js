@@ -131,7 +131,7 @@ if(typeof horseid !== 'undefined'){
 	query={_id:""+horseid}
 }
 
-logger.info(JSON.stringify(query));
+//logger.info(JSON.stringify(query));
 
  MongoClient.connect("mongodb://" + databaseUrl,function(err,db){
     if(err) throw(err);
@@ -175,13 +175,17 @@ logger.info(JSON.stringify(query));
     },function(err){
     	if(err)logger.err(JSON.stringify(err));
     	else{
-    		console.log("#" + minDist + "-" + maxDist + "m " + going + " " + code + " " + surface);
+    		console.log("#" + minDist + "-" + maxDist + "m-" + going + "-" + code + "-" + surface + (typeof(horseid) != 'undefined'? "-" + horseid:""));
     		console.log("#minspeed " + minSpeed + " maxspeed " + maxSpeed);
     		console.log("#binwidth: " + binwidth);
     		for(var i=0;i<nbins; i++){
     			var speed = floor + (i * binwidth) + (binwidth/2);
     			console.log(speed.toFixed(2) + " " + hist[i]);
     		}
+            var fname=minDist + "-" + maxDist + "m-" + going + "-" + code + "-" + surface + (typeof(horseid) != 'undefined'? "-" + horseid:"");
+            console.log("#gnuplot -e \"set terminal png size 1200,400;set output '" + fname + ".png';set xtics rotate;plot '"+fname +".dat' using 2: xtic(1) with boxes\"");
+            process.exit();
+            
     	}
     });
     
