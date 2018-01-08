@@ -107,7 +107,7 @@ var databaseUrl =  nconf.get("databaseurl");
     db.collection('perfstocheck').find({message:{$exists:false}}).forEach(function(perf){
     	
       console.log("sudo node /home/ubuntu/GP/data/scrape-develop/checkperformance --conf /home/ubuntu/GP/data/scrapeconfig.json --raceid=" + perf.raceid + " --runnerid=" + perf.runnerid + " > /home/ubuntu/GP/data/checkperfs.txt");
-      console.log("sleep1");
+      console.log("sleep 1");
     	
     	
     	
