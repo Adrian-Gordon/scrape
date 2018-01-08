@@ -156,6 +156,7 @@ function processOnePerformance(db){
               request(url, function(err,resp,body){
                 if(err){
                   logger.error(JSON.stringify(err));
+                  process.exit();
                 }
                 else{
                   try{
@@ -169,20 +170,23 @@ function processOnePerformance(db){
                            		process.exit(); //quit on 403
                            }
                            else{
-                           	processOnePerformance(db); //and process the next one
+                           	//processOnePerformance(db); //and process the next one
+                           		process.exit();
                            }
                         })
                     }
                     else{
                     	db.collection("perfstocheck").remove({_id:id},function(err){
 		                	//setTimeout(processOnePerformance,1000,db);
-		                    processOnePerformance(db);//get the next one
+		                    //processOnePerformance(db);//get the next one
+		                    process.exit();
 		                })
                     }
 
 
                   }catch(err){
                     logger.error("error: " + err + " url: " + url);
+                    process.exit();
                   }
                   
                 }
@@ -214,6 +218,7 @@ function processOnePerformance(db){
                 request(url, function(err,resp,body){
                   if(err){
                     logger.error(JSON.stringify(err));
+                    process.exit();
                   }
                   else{
                     try{
@@ -228,7 +233,8 @@ function processOnePerformance(db){
                            		process.exit(); //quit on 403
                            }
                            else{
-                           	processOnePerformance(db); //and process the next one
+                           	//processOnePerformance(db); //and process the next one
+                           	process.exit();
                            }
                         })
                        
@@ -236,12 +242,14 @@ function processOnePerformance(db){
                       else{
                         db.collection("perfstocheck").remove({_id:id},function(err){ //remove this one
                         	//setTimeout(processOnePerformance,1000,db);
-                          processOnePerformance(db);//get the next one
+                          //processOnePerformance(db);//get the next one
+                          process.exit();
                         });
                       }
                     }
                     catch(err){
                        logger.error(JSON.stringify(err));
+                       process.exit();
                     }
                     
                   }
@@ -256,7 +264,8 @@ function processOnePerformance(db){
                 //logger.info("performance already there");
                  db.collection("perfstocheck").remove({_id:id},function(err){
                  	//setTimeout(processOnePerformance,1000,db);
-                    processOnePerformance(db);//get the next one
+                    //processOnePerformance(db);//get the next one
+                    process.exit();
                 })
               }
 
