@@ -37,7 +37,9 @@ nconf.defaults(
     "nbins" : 50,
     "ceiling": 18,
     "floor": 11,
-    "loghorses": false
+    "loghorses": false,
+    "output":"normalized"
+
 })
 
 
@@ -116,6 +118,8 @@ var binwidth=(ceiling-floor) / nbins;
 
 var loghorses=nconf.get('loghorses');
 var horseid=nconf.get('horseid');
+var targetMode=nconf.get('targetmode');
+var output=nconf.get("output");
 
 var hist=new Array(nbins);
 for(var i=0; i< nbins;i++){
@@ -145,11 +149,22 @@ if(typeof horseid !== 'undefined'){
     		if(perf.distance >= minDist && perf.distance <= maxDist && perf.going == going && perf.surface==surface && perf.racetype==code){
     			if((perf.speed < maxPermissibleSpeed) && (perf.speed > floor) &&(perf.speed < ceiling)){
     				var normalizedSpeed=(perf.speed - 11.0)/(17.282474226804123 - 11.0);
-    				if((normalizedSpeed > 0) && (normalizedSpeed < 1))console.log(normalizedSpeed);
+    				
     				if(minSpeed==0.0) minSpeed=perf.speed;
     				if(maxSpeed==0.0)maxSpeed=perf.speed;
     				if(perf.speed < minSpeed)minSpeed=perf.speed;
     				if(perf.speed > maxSpeed)maxSpeed=perf.speed;
+    				if(output == "normalized"){
+    					if((normalizedSpeed > 0) && (normalizedSpeed < 1))console.log(normalizedSpeed);
+    				}
+    				else{
+    					if(typeof(targetMode)=='undefined'){
+    						console.log(perf.speed);
+    					}
+    					else{
+    						console.log(perf.speed + (perf.speed - targetMode));
+    					}
+    				}
     			}
     		}
     	}

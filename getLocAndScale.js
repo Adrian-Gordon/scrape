@@ -163,18 +163,22 @@ if(typeof horseid !== 'undefined'){
     	if(maxHorseCount==0){
     		maxHorseCount=horseCount;
     		maxHorseid=horseid;
-    		if(loghorses)logger.info(maxHorseid + " " + maxHorseCount);
+    		//if(loghorses)logger.info(maxHorseid + " " + maxHorseCount);
     	}
     	if(horseCount > maxHorseCount){
     		maxHorseCount=horseCount;
     		maxHorseid=horseid;
-    		if(loghorses)logger.info(maxHorseid + " " + maxHorseCount);
+    		//if(loghorses)logger.info(maxHorseid + " " + maxHorseCount);
     	}
+        if(horseCount > 20){
+            if(loghorses)console.log(horseid);
+        }
     	
     	
     },function(err){
-    	if(err)logger.err(JSON.stringify(err));
+    	if(err)logger.error(JSON.stringify(err));
     	else{
+            if(loghorses)console.log("#maxhorse: " + maxHorseid + " " + maxHorseCount);
     		console.log("#" + minDist + "-" + maxDist + "m-" + going + "-" + code + "-" + surface + (typeof(horseid) != 'undefined'? "-" + horseid:""));
     		console.log("#minspeed " + minSpeed + " maxspeed " + maxSpeed);
     		console.log("#binwidth: " + binwidth);
