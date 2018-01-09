@@ -1,4 +1,5 @@
 //Generate a beta distribution of speeds, and put them in to a histogram
+//if --filename arg is provided, read data from the relevant file instead
 var jStat = require('jStat').jStat;
 //nconf is used globally
 nconf=require('nconf');
@@ -90,7 +91,7 @@ function traceCaller(n) {
     s=s.substring(a+1,b);
     return s;
   }
-
+  var filename=nconf.get('filename');
   var nobservations=nconf.get("nobservations");
   var alpha=nconf.get("alpha");
   var beta=nconf.get("beta");
@@ -100,27 +101,55 @@ function traceCaller(n) {
   var minspeed=nconf.get("minspeed");
   var binwidth=nconf.get("binwidth");
   var nbins=Math.floor((maxspeed - minspeed)/binwidth);
+  var linereader;
   var hist =new Array(nbins);
   for(var i=0;i<nbins;i++){
     hist[i]=0;
   }
 
-  for(var i=0;i<nobservations;i++){
 
-    
-     var sample=jStat.beta.sample(alpha,beta);
-     var observation= loc + (scale * sample);
-     //console.log("sample: " + sample + " observation: " +observation);
-     var index=Math.floor((observation - 11.0) / binwidth);
-     //console.log(observation + " " + index);
-      if(index > 99) index=99;
-      hist[index]=hist[index]+1;
+  if(typeof filename != 'undefined'){
+    var lineReader = require('readline').createInterface({
+      input: require('fs').createReadStream(filename)
+    });
+    lineReader.on('line',function(line){
+      var observation=parseFloat(line);
+      var index=Math.floor((observation - 11.0) / binwidth);
+       ///console.log(observation + " " + index);
+        if(index > 99) index=99;
+        hist[index]=hist[index]+1;
+
+    });
+    lineReader.on('close',function(){
+      //console.log("END");
+      for(var i=0;i<nbins;i++){
+        var binMiddle=11.0 + (binwidth/2)+(i * binwidth)
+        console.log( binMiddle.toFixed(2)+ " " +hist[i]);
+      }
+    })
+
+  }
+  else{
+
+    for(var i=0;i<nobservations;i++){
+
+      
+       var sample=jStat.beta.sample(alpha,beta);
+       var observation= loc + (scale * sample);
+       //console.log("sample: " + sample + " observation: " +observation);
+       var index=Math.floor((observation - 11.0) / binwidth);
+       //console.log(observation + " " + index);
+        if(index > 99) index=99;
+        hist[index]=hist[index]+1;
+    }
+  
+
+    for(var i=0;i<nbins;i++){
+      var binMiddle=11.0 + (binwidth/2)+(i * binwidth)
+      console.log( binMiddle.toFixed(2)+ " " +hist[i]);
+    }
   }
 
-  for(var i=0;i<nbins;i++){
-    var binMiddle=11.0 + (binwidth/2)+(i * binwidth)
-    console.log( binMiddle.toFixed(2)+ " " +hist[i]);
-  }
 
 
 
