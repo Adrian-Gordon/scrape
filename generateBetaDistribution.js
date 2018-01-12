@@ -109,10 +109,12 @@ function traceCaller(n) {
 
 
   if(typeof filename != 'undefined'){
+    var count=0;
     var lineReader = require('readline').createInterface({
       input: require('fs').createReadStream(filename)
     });
     lineReader.on('line',function(line){
+      count++;
       var observation=parseFloat(line);
       var index=Math.floor((observation - 11.0) / binwidth);
        ///console.log(observation + " " + index);
@@ -126,6 +128,7 @@ function traceCaller(n) {
         var binMiddle=11.0 + (binwidth/2)+(i * binwidth)
         console.log( binMiddle.toFixed(2)+ " " +hist[i]);
       }
+      console.log("count: " + count);
     })
 
   }
