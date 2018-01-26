@@ -1470,6 +1470,75 @@ function getDateCards(req,res){
 
 	var url=nconf.get('rprooturl')+ "/racecards/" + date;
   logger.info("url: " + url);
+
+  var request = require('request');
+
+  var headers = {
+            'User-Agent': 'Mozilla/5.0'
+  };
+
+  var options = {
+      url: url,
+      headers:headers
+
+  }; 
+
+  request(options, function(error,resp,body){
+    if(typeof resp == 'undefined'){
+    var obj={
+          status:"ERROR",
+          message:"No response from: " + url
+        }
+         logger.error("No response from: " + url);
+        res.json(obj);
+   }
+  else if(resp.statusCode !== 200){
+       var obj={
+          status:"ERROR",
+          message:JSON.stringify("bad response code: " + resp.statusCode + " from: " + url)
+        }
+         logger.error("bad response code: " + resp.statusCode + " from: " + url);
+        res.json(obj);
+    }
+    else{
+      $ = cheerio.load(body);
+      $('.RC-meetingItem a').each(function(index, value){
+        var raceUrl=$(value).attr('href');
+        logger.info("raceUrl: " + raceUrl);
+        //var index1=raceUrl.indexOf("_id=");
+        //var index2=raceUrl.indexOf("r_date");
+        //var raceid=raceUrl.substring(index1+4,index2-1);
+        result.push(raceUrl);
+
+      });
+
+      if(typeof outbatch !== 'undefined' && outbatch=='true'){
+          var sendString="";
+          for(var i=0;i<result.length;i++){
+            var rurl=result[i];
+           // sudo node /Users/adriangordon/Development/GP/data/scrape/downloadcard --raceid 643501 > dbatchout0.txt 2>&1 &
+           //sudo chmod +x dbatch0.sh
+          //at -f dbatch0.sh now +1 minute
+            sendString=sendString+ "echo \"sudo node " + nconf.get('scrapedir') +"downloadcard --conf " + nconf.get('datadir')+"scrapeconfig.json --raceurl  " + rurl + " > " + nconf.get('datadir') + "dbatchout" + i + ".txt 2>&1 &\" > " + nconf.get('datadir')+"dbatch" +i +".sh\n";
+            sendString=sendString+"sudo chmod +x " + nconf.get('datadir') + "dbatch" + i + ".sh\n";
+            //sendString=sendString+"at -f dbatch" + i + ".sh now +" + ((i + 1) +(i * nconf.get("delay"))) +" minute\n";
+            sendString=sendString+"at -f " + nconf.get('datadir') + "dbatch" + i + ".sh now +" + i * nconf.get("delay") +" minute\n";
+            
+          }
+          res.send(sendString);
+          //res.end();
+      }
+
+      else res.json(result);
+
+    }
+
+  });
+
+
+
+/*
+
 	var resp=srequest('GET',url);
   //logger.info(resp.getBody());
 
@@ -1502,7 +1571,7 @@ function getDateCards(req,res){
       //res.end();
   }
 
-	else res.json(result);
+	else res.json(result);*/
 
 
 }
