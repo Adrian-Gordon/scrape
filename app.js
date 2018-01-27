@@ -496,6 +496,8 @@ var distParserStr="start=(integerspace/integerfraction/integer/fraction/space/de
 +"/'nse ' {return 0.02}\n"
 +"/'shd ' {return 0.05}\n"
 +"/'shd' {return 0.05}\n"
++"/'sht-hd ' {return 0.05}\n"
++"/'sht-hd' {return 0.05}\n"
 +"/'dht ' {return 0.0}\n"
 +"/'dht' {return 0.0}\n"
 +"/'dist ' {return 30.0}\n"
