@@ -3365,7 +3365,8 @@ function addRaceResultData(raceid,result,resulturl,res){
                         speed:horseData.speed,
                         position:horseData.pos,
                         price: horseData.price,
-                        resulturl:resulturl
+                        resulturl:resulturl,
+                        percentofwinningtime:horseData.speed / winningspeed
 
                       }
                       asyncCalls++;
