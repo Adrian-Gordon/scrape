@@ -3266,6 +3266,8 @@ function addRaceResultData(raceid,result,resulturl,res){
    raceDocument.winningtime=result.racetime.timeinseconds;
    raceDocument.resulturl=resulturl;
 
+   var winningspeed = result.distanceinmetres / result.racetime.timeinseconds;
+
    var conditions=result.conditions;
    if(typeof conditions !== 'undefined'){
     for(var x=0;x<conditions.length;x++){
@@ -3331,7 +3333,8 @@ function addRaceResultData(raceid,result,resulturl,res){
                         speed:horseData.speed,
                         position:horseData.pos,
                         price: horseData.price,
-                        resulturl:resulturl
+                        resulturl:resulturl,
+                        percentofwinningtime:horseData.speed / winningspeed
                       }
                       //logger.info("horsedoc: " + JSON.stringify(horseDoc));
                       asyncCalls++;
