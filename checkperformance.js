@@ -156,7 +156,7 @@ function processOnePerformance(db,rid,runnerid){
               var url;
               if(typeof rurl !== 'undefined'){
                 
-                 url="http://" + nconf.get("host") + ":" + nconf.get("port") + "/getraceresult?resulturl=" + rurl + "&adddata=true" + replaceS;
+                 url="http://" + nconf.get("host") + ":" + nconf.get("port") + "/getraceresult?resulturl=" + rurl.replace(" ","-") + "&adddata=true" + replaceS;
               }
               else if(typeof rid != 'undefined'){
                 url="http://" + nconf.get("host") + ":" + nconf.get("port") + "/getraceresult?raceid=" + rid + "&adddata=true" + replaceS;

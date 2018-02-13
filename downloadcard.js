@@ -322,6 +322,7 @@ function processRunners(db,runners){
         for(var j=0;j<runner.races.length;j++){
           count++;
           var raceurl=runner.races[j];
+          raceurl=raceurl.replace(" ","-")
           var index=raceurl.lastIndexOf('/');
           var raceid=raceurl.substring(index+1,raceurl.length);
           logger.info("Check horse: " + runnerid + " " + raceid);
